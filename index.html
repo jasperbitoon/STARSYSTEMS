@@ -32,13 +32,36 @@
   @keyframes ns-drift-a { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(90px,60px,0) scale(1.12); } }
   @keyframes ns-drift-b { 0%,100% { transform: translate3d(0,0,0) scale(1.06); } 50% { transform: translate3d(-70px,-50px,0) scale(1); } }
   @keyframes ns-caret { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
-  @keyframes ns-page-in { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+  @keyframes ns-page-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes ns-turn { to { transform: rotate(90deg); } }
   @keyframes ns-scan { 0% { transform: translateX(-100%); opacity: 0; } 12% { opacity: 1; } 100% { transform: translateX(100%); opacity: 0; } }
-  [data-nav-mark] { transform: scaleX(0); }
-  [data-nav-mark][data-on="true"] { transform: scaleX(1); }
-  .nav a:hover [data-nav-mark] { transform: scaleX(1); }
+  @keyframes ns-word { from { opacity: 0; transform: translateY(.24em); filter: blur(12px); } to { opacity: 1; transform: none; filter: none; } }
+  @keyframes ns-reveal { from { opacity: 0; transform: translate3d(0, 22px, 0) scale(.975); } to { opacity: 1; transform: none; } }
+  @keyframes ns-reveal-x { from { opacity: 0; transform: translate3d(-22px, 0, 0); } to { opacity: 1; transform: none; } }
+  @keyframes ns-row { from { opacity: 0; } 35%, to { opacity: 1; } }
+  /* Each word of a page headline sits in its own span and arrives in turn, soft to sharp.
+     --ns-at is when the first word starts, --ns-gap the wait between words. Screen readers skip
+     the word spans (aria-hidden) and read the sentence once, from the aria-label on the h1. */
+  .ns-w { display: inline-block; animation: ns-word .7s cubic-bezier(.2,.7,.2,1) backwards; animation-delay: calc(var(--ns-at, .12s) + var(--ns-n, 0) * var(--ns-gap, 60ms)); }
+  .ns-w:nth-child(2) { --ns-n: 1; } .ns-w:nth-child(3) { --ns-n: 2; } .ns-w:nth-child(4) { --ns-n: 3; }
+  .ns-w:nth-child(5) { --ns-n: 4; } .ns-w:nth-child(6) { --ns-n: 5; } .ns-w:nth-child(7) { --ns-n: 6; }
+  .ns-w:nth-child(8) { --ns-n: 7; } .ns-w:nth-child(9) { --ns-n: 8; } .ns-w:nth-child(n+10) { --ns-n: 9; }
+  /* The nav underline grows from the left and leaves to the right. */
+  [data-nav-mark] { transform: scaleX(0); transform-origin: right; }
+  [data-nav-mark][data-on="true"], .nav a:hover [data-nav-mark] { transform: scaleX(1); transform-origin: left; }
+  /* Scroll reveals. --ns-d is the place in the queue that reveal() gives each one. A row arrives
+     a column at a time; its own animation is the longest of the group, so its end clears them all. */
   [data-reveal][data-hide] { opacity: 0; }
-  [data-reveal][data-anim] { animation: ns-rise .6s ease backwards; }
+  [data-reveal][data-anim] { animation: ns-reveal .7s cubic-bezier(.2,.7,.2,1) var(--ns-d, 0ms) backwards; }
+  [data-reveal="row"][data-anim] { animation: ns-row 1s linear var(--ns-d, 0ms) backwards; }
+  [data-reveal="row"][data-anim] > * { animation: ns-reveal-x .7s cubic-bezier(.2,.7,.2,1) calc(var(--ns-d, 0ms) + 40ms) backwards; }
+  [data-reveal="row"][data-anim] > :nth-child(2) { animation-delay: calc(var(--ns-d, 0ms) + 140ms); }
+  [data-reveal="row"][data-anim] > :nth-child(3) { animation-delay: calc(var(--ns-d, 0ms) + 240ms); }
+  /* Whatever holds keyboard focus is on show, arrived or not. */
+  [data-reveal]:focus-within { opacity: 1 !important; }
+  [data-reveal]:focus-within, [data-reveal]:focus-within > * { animation: none !important; }
+  /* Cards lift under the pointer. tilt() leans cards and rows toward it on top of that. */
+  @media (hover: hover) { .card[data-tilt]:hover { transform: translateY(-3px); } }
   .nav a, .btn { white-space: nowrap; }
   .nav .btn { flex-shrink: 0; }
   main h1[tabindex="-1"]:focus { outline: none; }
@@ -59,6 +82,12 @@
   .input:hover:not(:focus-visible):not([aria-invalid="true"]) { border-color: color-mix(in srgb, var(--color-text) 72%, transparent); }
   .input[aria-invalid="true"], .seg[aria-invalid="true"] { border-color: var(--ns-danger); }
   .btn[aria-disabled="true"] { opacity: .45; cursor: progress; }
+  /* Small answers to the pointer and to focus. Only the button press is animated, and only its
+     transform; a focused field's ring and label colour change at once, so no field moves. */
+  .btn { transition: transform .15s cubic-bezier(.2,.7,.2,1); }
+  .btn:active { transform: translateY(1px) scale(.985); }
+  .input:focus-visible { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 14%, transparent); }
+  .field:focus-within > label, .field:focus-within > .ns-label { color: var(--color-text); }
   .ns-copy { margin: 0 0 20px; padding: 14px 16px; max-height: 280px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14.5px; line-height: 1.6; border: 1px solid var(--color-neutral-600); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-bg) 55%, transparent); color: color-mix(in srgb, var(--color-text) 88%, transparent); }
   .ns-link { text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
   .ns-vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -99,13 +128,20 @@
     .seg-opt:has(input:checked):has(input:focus-visible) { outline-color: HighlightText; }
   }
   [data-still="true"] [data-reveal][data-hide] { opacity: 1; }
-  [data-still="true"] [style*="ns-"], [data-still="true"] [data-reveal] { animation: none !important; }
-  [data-settled="true"] [style*="ns-rise"], [data-settled="true"] [style*="ns-rule"], [data-settled="true"] [style*="ns-page-in"], [data-settled="true"] [style*="ns-scan"] { animation: none !important; }
+  [data-still="true"] [style*="ns-"], [data-still="true"] [data-reveal], [data-still="true"] [data-reveal] > *, [data-still="true"] .ns-w { animation: none !important; }
+  [data-still="true"] :is([data-nav-mark], [data-tilt], .btn) { transition: none !important; }
+  [data-still="true"] .btn:active { transform: none; }
+  [data-settled="true"] [style*="ns-rise"], [data-settled="true"] [style*="ns-rule"], [data-settled="true"] [style*="ns-page-in"], [data-settled="true"] [style*="ns-scan"], [data-settled="true"] [style*="ns-turn"], [data-settled="true"] .ns-w { animation: none !important; }
   @media (prefers-reduced-motion: reduce) {
     [data-reveal][data-hide] { opacity: 1; }
-    [style*="ns-"], [data-reveal] { animation: none !important; }
+    [style*="ns-"], [data-reveal], [data-reveal] > *, .ns-w { animation: none !important; }
+    :is([data-nav-mark], [data-tilt], .btn) { transition: none !important; }
+    .btn:active { transform: none; }
   }
-  @media print { [data-reveal][data-hide] { opacity: 1 !important; } }
+  @media print {
+    [data-reveal][data-hide] { opacity: 1 !important; }
+    [data-reveal], [data-reveal] > *, .ns-w { animation: none !important; }
+  }
 </style>
 <script defer src="vendor/react.production.min.js"></script>
 <script defer src="vendor/react-dom.production.min.js"></script>
@@ -128,13 +164,13 @@
 
   <nav class="nav" aria-label="Main" style="padding-inline: max(24px, calc((100% - 1160px) / 2 + 24px)); position: sticky; top: 0; z-index: 20; backdrop-filter: blur(10px); background: color-mix(in srgb, var(--color-bg) 82%, transparent)">
     <a href="#/" onClick="{{ goHome }}" class="nav-brand" style="color: var(--color-text); display: flex; align-items: center; gap: 10px">
-      <span aria-hidden="true" style="width: 13px; height: 13px; background: var(--color-accent); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%)"></span>
+      <span aria-hidden="true" ref="{{ starRef }}" style="width: 13px; height: 13px; background: var(--color-accent); clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%)"></span>
       <span>{{ brand }}</span>
     </a>
     <div class="ns-links">
-      <a href="#/solutions" onClick="{{ goSolutions }}" aria-current="{{ curSolutions }}" style="position: relative">Solutions<span data-nav-mark data-on="{{ isSolutions }}" aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -7px; height: 1px; background: var(--color-accent); transform-origin: left; transition: transform .4s cubic-bezier(.2,.7,.2,1)"></span></a>
-      <a href="#/work" onClick="{{ goWork }}" aria-current="{{ curWork }}" style="position: relative">Work<span data-nav-mark data-on="{{ isWork }}" aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -7px; height: 1px; background: var(--color-accent); transform-origin: left; transition: transform .4s cubic-bezier(.2,.7,.2,1)"></span></a>
-      <a href="#/about" onClick="{{ goAbout }}" aria-current="{{ curAbout }}" style="position: relative">About<span data-nav-mark data-on="{{ isAbout }}" aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -7px; height: 1px; background: var(--color-accent); transform-origin: left; transition: transform .4s cubic-bezier(.2,.7,.2,1)"></span></a>
+      <a href="#/solutions" onClick="{{ goSolutions }}" aria-current="{{ curSolutions }}" style="position: relative">Solutions<span data-nav-mark data-on="{{ isSolutions }}" aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -7px; height: 1px; background: var(--color-accent); transition: transform .4s cubic-bezier(.2,.7,.2,1)"></span></a>
+      <a href="#/work" onClick="{{ goWork }}" aria-current="{{ curWork }}" style="position: relative">Work<span data-nav-mark data-on="{{ isWork }}" aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -7px; height: 1px; background: var(--color-accent); transition: transform .4s cubic-bezier(.2,.7,.2,1)"></span></a>
+      <a href="#/about" onClick="{{ goAbout }}" aria-current="{{ curAbout }}" style="position: relative">About<span data-nav-mark data-on="{{ isAbout }}" aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -7px; height: 1px; background: var(--color-accent); transition: transform .4s cubic-bezier(.2,.7,.2,1)"></span></a>
     </div>
     <a href="#/start" onClick="{{ goStart }}" aria-current="{{ curStart }}" class="btn btn-primary" style="margin-left: auto" style-hover="box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 16%, transparent)">Start a project</a>
     <span aria-hidden="true" ref="{{ progressRef }}" style="position: absolute; left: 0; top: 0; height: 2px; width: 0%; background: linear-gradient(to right, color-mix(in srgb, var(--color-accent) 25%, transparent), var(--color-accent))"></span>
@@ -153,21 +189,21 @@
           <span style="height: 1px; background: color-mix(in srgb, var(--color-accent) 55%, transparent); transform-origin: left; width: 72%; animation: ns-rule .9s cubic-bezier(.2,.7,.2,1) .12s both"></span>
           <span style="height: 1px; background: color-mix(in srgb, var(--color-accent) 30%, transparent); transform-origin: left; width: 44%; animation: ns-rule .9s cubic-bezier(.2,.7,.2,1) .24s both"></span>
         </div>
-        <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(42px, 6.1vw, 82px); line-height: 1.05; letter-spacing: -.02em; margin: 0 0 32px; margin-left: -.06em; max-width: 21ch">
-          <span style="display: block; animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .1s both">Every company runs on</span>
-          <span style="display: block; animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .22s both">a problem it works around.</span>
-          <span style="display: block; color: color-mix(in srgb, var(--color-text) 52%, transparent); animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .34s both">I build the thing that ends it.</span>
+        <h1 aria-label="Every company runs on a problem it works around. I build the thing that ends it." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(42px, 6.1vw, 82px); line-height: 1.05; letter-spacing: -.02em; margin: 0 0 32px; margin-left: -.06em; max-width: 21ch; --ns-gap: 42ms">
+          <span aria-hidden="true" style="display: block; --ns-at: .1s"><span class="ns-w">Every</span> <span class="ns-w">company</span> <span class="ns-w">runs</span> <span class="ns-w">on</span></span>
+          <span aria-hidden="true" style="display: block; --ns-at: .27s"><span class="ns-w">a</span> <span class="ns-w">problem</span> <span class="ns-w">it</span> <span class="ns-w">works</span> <span class="ns-w">around.</span></span>
+          <span aria-hidden="true" style="display: block; color: color-mix(in srgb, var(--color-text) 52%, transparent); --ns-at: .48s"><span class="ns-w">I</span> <span class="ns-w">build</span> <span class="ns-w">the</span> <span class="ns-w">thing</span> <span class="ns-w">that</span> <span class="ns-w">ends</span> <span class="ns-w">it.</span></span>
         </h1>
-        <p style="font-size: 18.5px; line-height: 1.62; max-width: 58ch; margin: 0; color: color-mix(in srgb, var(--color-text) 82%, transparent); animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .46s both">A CRM your team will actually open. The manual process that eats four hours a week, gone. The operations nobody can see into, on one screen. {{ brand }} designs and builds the custom software companies run on — AI-accelerated delivery, senior judgement, timelines an agency can't quote against.</p>
+        <p style="font-size: 18.5px; line-height: 1.62; max-width: 58ch; margin: 0; color: color-mix(in srgb, var(--color-text) 82%, transparent); animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .5s both">A CRM your team will actually open. The manual process that eats four hours a week, gone. The operations nobody can see into, on one screen. {{ brand }} designs and builds the custom software companies run on — AI-accelerated delivery, senior judgement, timelines an agency can't quote against.</p>
         <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 36px; animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .58s both">
           <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary">Start a project</a>
           <a href="#/work" onClick="{{ goWork }}" class="btn btn-ghost">See the work</a>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px; margin-top: 40px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 60%, transparent); animation: ns-rise .8s ease .7s both">
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 40px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 60%, transparent); animation: ns-rise .8s ease .68s both">
           <span aria-hidden="true" style="width: 7px; height: 7px; border-radius: 50%; background: var(--color-accent); animation: ns-pulse 2.6s ease-in-out infinite"></span>
           <span>{{ availability }}</span>
         </div>
-        <div data-reveal style="margin-top: 40px; max-width: 560px; animation: ns-rise .8s ease .82s both">
+        <div style="margin-top: 40px; max-width: 560px; animation: ns-rise .8s ease .78s both">
           <p style="font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 58%, transparent); margin: 0 0 10px">Heard on the first call</p>
           <div aria-hidden="true" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--color-neutral-700); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-bg) 55%, transparent); backdrop-filter: blur(6px)">
             <span style="color: var(--color-accent); font-size: 15px">&#8250;</span>
@@ -183,19 +219,19 @@
         radial-gradient(900px 420px at 85% -40%, color-mix(in srgb, var(--color-section-glow) 70%, transparent), transparent 64%),
         var(--color-section); padding: 56px 0">
       <div style="max-width: 1160px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 32px">
-        <div>
+        <div data-reveal>
           <p style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(26px, 2.8vw, 36px); line-height: 1.15; margin: 0 0 12px">Weeks</p>
           <p style="font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 66%, transparent); margin: 0">Not quarters, not roadmaps</p>
         </div>
-        <div>
+        <div data-reveal>
           <p style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(26px, 2.8vw, 36px); line-height: 1.15; margin: 0 0 12px">Fixed scope</p>
           <p style="font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 66%, transparent); margin: 0">Priced per engagement, signed up front</p>
         </div>
-        <div>
+        <div data-reveal>
           <p style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(26px, 2.8vw, 36px); line-height: 1.15; margin: 0 0 12px">You own it</p>
           <p style="font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 66%, transparent); margin: 0">Your repo, your accounts, day one</p>
         </div>
-        <div>
+        <div data-reveal>
           <p style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(26px, 2.8vw, 36px); line-height: 1.15; margin: 0 0 12px">Senior only</p>
           <p style="font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 66%, transparent); margin: 0">You deal with the principal, not a PM</p>
         </div>
@@ -203,35 +239,35 @@
     </section>
 
     <section style="max-width: 1160px; margin: 0 auto; padding: 88px 24px 56px">
-      <span role="heading" aria-level="2" style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 40px">What I build</span>
+      <span role="heading" aria-level="2" data-reveal style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 40px">What I build</span>
       <sc-for list="{{ solutions }}" as="s" hint-placeholder-count="4">
-        <div class="ns-row3" data-reveal style-hover="background-color: color-mix(in srgb, var(--color-accent) 5%, transparent)" style="padding: 30px 0; transition: background-color .35s ease; background-image: linear-gradient(to right, transparent, var(--color-neutral-700) 48px calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; background-position: top left">
+        <div class="ns-row3" data-reveal="row" data-tilt style-hover="background-color: color-mix(in srgb, var(--color-accent) 5%, transparent)" style="padding: 30px 0; transition: background-color .35s ease, transform .4s cubic-bezier(.2,.7,.2,1); background-image: linear-gradient(to right, transparent, var(--color-neutral-700) 48px calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; background-position: top left">
           <p style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 15px; color: var(--color-accent); margin: 0; font-feature-settings: 'tnum' 1">{{ s.num }}</p>
           <h3 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 25px; line-height: 1.2; letter-spacing: -.01em; margin: 0">{{ s.title }}</h3>
           <p style="font-size: 15.5px; line-height: 1.66; margin: 0; max-width: 54ch; color: color-mix(in srgb, var(--color-text) 78%, transparent)">{{ s.body }}</p>
         </div>
       </sc-for>
-      <div style="margin-top: 36px">
+      <div data-reveal style="margin-top: 36px">
         <a href="#/solutions" onClick="{{ goSolutions }}" class="btn btn-ghost">How I scope and qualify work</a>
       </div>
     </section>
 
     <section style="max-width: 1160px; margin: 0 auto; padding: 40px 24px 72px">
-      <span role="heading" aria-level="2" style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 32px">Who I work with</span>
+      <span role="heading" aria-level="2" data-reveal style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 32px">Who I work with</span>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px">
-        <div class="card" data-reveal style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="transform: translateY(-3px); border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-md)">
+        <div class="card" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-md)">
           <p class="card-title" role="heading" aria-level="3">Funded startups</p>
           <p class="card-body">Internal tools and product surfaces your engineers don't have the sprint capacity for.</p>
         </div>
-        <div class="card" data-reveal style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="transform: translateY(-3px); border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-md)">
+        <div class="card" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-md)">
           <p class="card-title" role="heading" aria-level="3">Small businesses</p>
           <p class="card-body">The spreadsheet, the inbox and the group chat, replaced by one system your staff can use.</p>
         </div>
-        <div class="card" data-reveal style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="transform: translateY(-3px); border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-md)">
+        <div class="card" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-md)">
           <p class="card-title" role="heading" aria-level="3">Agencies, white-label</p>
           <p class="card-body">I build under your name, on your timeline, and stay out of the client relationship.</p>
         </div>
-        <div class="card" data-reveal style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="transform: translateY(-3px); border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-md)">
+        <div class="card" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-md)">
           <p class="card-title" role="heading" aria-level="3">Solo founders</p>
           <p class="card-body">The version that proves the idea works, live and in front of paying users.</p>
         </div>
@@ -241,9 +277,9 @@
     <hr style="max-width: 1160px; margin: 0 auto; border: 0; height: 1px; background: linear-gradient(to right, transparent, var(--color-divider) 48px calc(100% - 48px), transparent)" />
 
     <section style="max-width: 1160px; margin: 0 auto; padding: 72px 24px 96px">
-      <h2 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(32px, 4.2vw, 54px); line-height: 1.08; letter-spacing: -.018em; margin: 0 0 20px; margin-left: -.05em; max-width: 22ch">Name the thing that's costing you time.</h2>
-      <p style="font-size: 17px; line-height: 1.62; max-width: 52ch; margin: 0 0 32px; color: color-mix(in srgb, var(--color-text) 78%, transparent)">Fill the project form and you'll hear back within a day with an honest read: whether it's buildable, roughly how long, and whether I'm the right person for it.</p>
-      <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary">Start a project</a>
+      <h2 data-reveal style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(32px, 4.2vw, 54px); line-height: 1.08; letter-spacing: -.018em; margin: 0 0 20px; margin-left: -.05em; max-width: 22ch">Name the thing that's costing you time.</h2>
+      <p data-reveal style="font-size: 17px; line-height: 1.62; max-width: 52ch; margin: 0 0 32px; color: color-mix(in srgb, var(--color-text) 78%, transparent)">Fill the project form and you'll hear back within a day with an honest read: whether it's buildable, roughly how long, and whether I'm the right person for it.</p>
+      <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary" data-reveal>Start a project</a>
     </section>
   </div>
   </sc-if>
@@ -251,11 +287,11 @@
   <sc-if value="{{ isSolutions }}" hint-placeholder-val="{{ false }}">
   <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">Solutions</span>
-    <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 5vw, 64px); line-height: 1.06; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.055em; max-width: 20ch; animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both">Whatever the problem is, the answer is a system.</h1>
-    <p style="animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .26s both; font-size: 18px; line-height: 1.62; max-width: 58ch; margin: 0 0 64px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Most engagements start as a sentence: sales lives in three spreadsheets, onboarding takes a week of email, nobody can find the file. The shape of the build follows from the problem, not from a service menu.</p>
+    <h1 aria-label="Whatever the problem is, the answer is a system." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 5vw, 64px); line-height: 1.06; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.055em; max-width: 20ch"><span aria-hidden="true"><span class="ns-w">Whatever</span> <span class="ns-w">the</span> <span class="ns-w">problem</span> <span class="ns-w">is,</span> <span class="ns-w">the</span> <span class="ns-w">answer</span> <span class="ns-w">is</span> <span class="ns-w">a</span> <span class="ns-w">system.</span></span></h1>
+    <p style="animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both; font-size: 18px; line-height: 1.62; max-width: 58ch; margin: 0 0 64px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Most engagements start as a sentence: sales lives in three spreadsheets, onboarding takes a week of email, nobody can find the file. The shape of the build follows from the problem, not from a service menu.</p>
 
     <sc-for list="{{ solutionsLong }}" as="s" hint-placeholder-count="4">
-      <div class="ns-row2" style-hover="background-color: color-mix(in srgb, var(--color-accent) 5%, transparent)" style="padding: 36px 0; transition: background-color .35s ease; background-image: linear-gradient(to right, transparent, var(--color-neutral-700) 48px calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; background-position: top left" data-reveal>
+      <div class="ns-row2" data-tilt style-hover="background-color: color-mix(in srgb, var(--color-accent) 5%, transparent)" style="padding: 36px 0; transition: background-color .35s ease, transform .4s cubic-bezier(.2,.7,.2,1); background-image: linear-gradient(to right, transparent, var(--color-neutral-700) 48px calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; background-position: top left" data-reveal="row">
         <div>
           <p style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 15px; color: var(--color-accent); margin: 0 0 12px; font-feature-settings: 'tnum' 1">{{ s.num }}</p>
           <h2 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 27px; line-height: 1.18; letter-spacing: -.012em; margin: 0">{{ s.title }}</h2>
@@ -273,32 +309,32 @@
     </sc-for>
 
     <section style="margin-top: 72px">
-      <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 24px">Before I take it on</span>
-      <h2 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(28px, 3.4vw, 40px); line-height: 1.12; letter-spacing: -.015em; margin: 0 0 20px; max-width: 24ch">Not every problem should be solved with code.</h2>
-      <p style="font-size: 16.5px; line-height: 1.64; max-width: 58ch; margin: 0 0 40px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Feasibility is case by case, and I'd rather tell you that on the first call than three weeks in. Every project gets read against four questions.</p>
+      <span data-reveal style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 24px">Before I take it on</span>
+      <h2 data-reveal style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(28px, 3.4vw, 40px); line-height: 1.12; letter-spacing: -.015em; margin: 0 0 20px; max-width: 24ch">Not every problem should be solved with code.</h2>
+      <p data-reveal style="font-size: 16.5px; line-height: 1.64; max-width: 58ch; margin: 0 0 40px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Feasibility is case by case, and I'd rather tell you that on the first call than three weeks in. Every project gets read against four questions.</p>
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px">
-        <div class="card elev-sm" data-reveal style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="transform: translateY(-3px); border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-lg)">
+        <div class="card elev-sm" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-lg)">
           <p class="card-kicker">01</p>
           <p class="card-title" role="heading" aria-level="3">Is it real work?</p>
           <p class="card-body">Something a person does repeatedly, on a schedule, with rules that can be written down.</p>
         </div>
-        <div class="card elev-sm" data-reveal style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="transform: translateY(-3px); border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-lg)">
+        <div class="card elev-sm" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-lg)">
           <p class="card-kicker">02</p>
           <p class="card-title" role="heading" aria-level="3">Can it reach the data?</p>
           <p class="card-body">If the systems involved have an API or an export, it's buildable. If it's locked in someone's head, we start there.</p>
         </div>
-        <div class="card elev-sm" data-reveal style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="transform: translateY(-3px); border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-lg)">
+        <div class="card elev-sm" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-lg)">
           <p class="card-kicker">03</p>
           <p class="card-title" role="heading" aria-level="3">Is the cost obvious?</p>
           <p class="card-body">Hours saved, deals lost, errors caught. If the value can't be named, the project can't be scoped.</p>
         </div>
-        <div class="card elev-sm" data-reveal style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="transform: translateY(-3px); border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-lg)">
+        <div class="card elev-sm" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1), border-color .3s ease, box-shadow .4s ease" style-hover="border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-neutral-700)); box-shadow: var(--shadow-lg)">
           <p class="card-kicker">04</p>
           <p class="card-title" role="heading" aria-level="3">Will anyone use it?</p>
           <p class="card-body">Software nobody opens is the most expensive kind. I want to meet the people who'll live in it.</p>
         </div>
       </div>
-      <div style="margin-top: 44px">
+      <div data-reveal style="margin-top: 44px">
         <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary">Put your problem in front of me</a>
       </div>
     </section>
@@ -308,10 +344,10 @@
   <sc-if value="{{ isWork }}" hint-placeholder-val="{{ false }}">
   <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">Work</span>
-    <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 5vw, 64px); line-height: 1.06; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.055em; max-width: 18ch; animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both">Things I've built, and what they changed.</h1>
-    <p style="animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .26s both; font-size: 18px; line-height: 1.62; max-width: 56ch; margin: 0 0 56px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">A young studio with a short list on purpose. Everything here I build end to end.</p>
+    <h1 aria-label="Things I've built, and what they changed." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 5vw, 64px); line-height: 1.06; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.055em; max-width: 18ch"><span aria-hidden="true"><span class="ns-w">Things</span> <span class="ns-w">I've</span> <span class="ns-w">built,</span> <span class="ns-w">and</span> <span class="ns-w">what</span> <span class="ns-w">they</span> <span class="ns-w">changed.</span></span></h1>
+    <p style="animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both; font-size: 18px; line-height: 1.62; max-width: 56ch; margin: 0 0 56px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">A young studio with a short list on purpose. Everything here I build end to end.</p>
 
-    <div class="ns-row2" data-reveal style="padding: 36px 0; background-image: linear-gradient(to right, transparent, var(--color-neutral-700) 48px calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; background-position: top left">
+    <div class="ns-row2" data-reveal="row" data-tilt style="padding: 36px 0; transition: transform .4s cubic-bezier(.2,.7,.2,1); background-image: linear-gradient(to right, transparent, var(--color-neutral-700) 48px calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; background-position: top left">
       <div>
         <p style="font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin: 0 0 12px">Custom CRM — built</p>
         <h2 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 27px; line-height: 1.18; letter-spacing: -.012em; margin: 0">A sales system built around one company's actual pipeline</h2>
@@ -320,8 +356,8 @@
     </div>
 
     <section style="margin-top: 72px">
-      <h2 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(28px, 3.4vw, 40px); line-height: 1.12; letter-spacing: -.015em; margin: 0 0 20px; max-width: 24ch">What I'm building now.</h2>
-      <div class="ns-row2" data-reveal style="padding: 36px 0; background-image: linear-gradient(to right, transparent, var(--color-neutral-700) 48px calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; background-position: top left">
+      <h2 data-reveal style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(28px, 3.4vw, 40px); line-height: 1.12; letter-spacing: -.015em; margin: 0 0 20px; max-width: 24ch">What I'm building now.</h2>
+      <div class="ns-row2" data-reveal="row" data-tilt style="padding: 36px 0; transition: transform .4s cubic-bezier(.2,.7,.2,1); background-image: linear-gradient(to right, transparent, var(--color-neutral-700) 48px calc(100% - 48px), transparent); background-size: 100% 1px; background-repeat: no-repeat; background-position: top left">
         <div>
           <p style="font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin: 0 0 12px">Custom CRM — next phase</p>
           <h3 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 27px; line-height: 1.18; letter-spacing: -.012em; margin: 0">The same system, taking on more of the company's work</h3>
@@ -330,7 +366,7 @@
       </div>
     </section>
 
-    <div style="margin-top: 56px">
+    <div data-reveal style="margin-top: 56px">
       <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary">Start a project</a>
     </div>
   </div>
@@ -341,18 +377,18 @@
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">About</span>
     <div class="ns-split-about">
       <div>
-        <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(36px, 4.6vw, 58px); line-height: 1.07; letter-spacing: -.018em; margin: 0 0 28px; margin-left: -.055em; animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both">Senior work, modern tools, no layers.</h1>
-        <p style="font-size: 17.5px; line-height: 1.68; max-width: 58ch; margin: 0 0 24px; color: color-mix(in srgb, var(--color-text) 82%, transparent)">{{ brand }} is {{ builderName }}. I design and build custom software for companies that have outgrown their workarounds — currently a full CRM for a client whose pipeline no product on the market fit.</p>
-        <p style="font-size: 16.5px; line-height: 1.68; max-width: 58ch; margin: 0 0 24px; color: color-mix(in srgb, var(--color-text) 78%, transparent)">The name isn't decoration. <em style="font-style: normal; color: var(--color-accent-300)">Bitoon</em> is my surname, and in Bisaya it means star — so the studio builds star systems: the software a company organises itself around.</p>
-        <p style="font-size: 16.5px; line-height: 1.68; max-width: 58ch; margin: 0 0 24px; color: color-mix(in srgb, var(--color-text) 78%, transparent)">AI does the typing. I do the judgement: what to build, what to leave out, what will break in month three. That combination is why a scope an agency quotes in quarters lands here in weeks, and why the person you brief is the person who writes the code.</p>
-        <p style="font-size: 16.5px; line-height: 1.68; max-width: 58ch; margin: 0; color: color-mix(in srgb, var(--color-text) 78%, transparent)">The studio takes a deliberately small number of engagements at a time, and brings in vetted specialists when a build calls for them. If yours isn't a fit, you'll hear that early, with a recommendation instead.</p>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 40px">
+        <h1 aria-label="Senior work, modern tools, no layers." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(36px, 4.6vw, 58px); line-height: 1.07; letter-spacing: -.018em; margin: 0 0 28px; margin-left: -.055em"><span aria-hidden="true"><span class="ns-w">Senior</span> <span class="ns-w">work,</span> <span class="ns-w">modern</span> <span class="ns-w">tools,</span> <span class="ns-w">no</span> <span class="ns-w">layers.</span></span></h1>
+        <p data-reveal style="font-size: 17.5px; line-height: 1.68; max-width: 58ch; margin: 0 0 24px; color: color-mix(in srgb, var(--color-text) 82%, transparent)">{{ brand }} is {{ builderName }}. I design and build custom software for companies that have outgrown their workarounds — currently a full CRM for a client whose pipeline no product on the market fit.</p>
+        <p data-reveal style="font-size: 16.5px; line-height: 1.68; max-width: 58ch; margin: 0 0 24px; color: color-mix(in srgb, var(--color-text) 78%, transparent)">The name isn't decoration. <em style="font-style: normal; color: var(--color-accent-300)">Bitoon</em> is my surname, and in Bisaya it means star — so the studio builds star systems: the software a company organises itself around.</p>
+        <p data-reveal style="font-size: 16.5px; line-height: 1.68; max-width: 58ch; margin: 0 0 24px; color: color-mix(in srgb, var(--color-text) 78%, transparent)">AI does the typing. I do the judgement: what to build, what to leave out, what will break in month three. That combination is why a scope an agency quotes in quarters lands here in weeks, and why the person you brief is the person who writes the code.</p>
+        <p data-reveal style="font-size: 16.5px; line-height: 1.68; max-width: 58ch; margin: 0; color: color-mix(in srgb, var(--color-text) 78%, transparent)">The studio takes a deliberately small number of engagements at a time, and brings in vetted specialists when a build calls for them. If yours isn't a fit, you'll hear that early, with a recommendation instead.</p>
+        <div data-reveal style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 40px">
           <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary">Start a project</a>
           <a href="{{ mailtoHref }}" class="btn btn-ghost">{{ email }}</a>
         </div>
       </div>
       <div>
-        <div class="card">
+        <div class="card" data-reveal data-tilt style="transition: transform .4s cubic-bezier(.2,.7,.2,1)">
           <p class="card-kicker" role="heading" aria-level="2">How I work</p>
           <ul style="margin: 12px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.6; color: color-mix(in srgb, var(--color-text) 78%, transparent)">
             <li>Fixed scope agreed before anything is built</li>
@@ -372,9 +408,9 @@
     <div class="ns-split-start">
       <div>
         <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">Start a project</span>
-        <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(34px, 4vw, 50px); line-height: 1.08; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.05em; animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both">Tell me what's broken.</h1>
-        <p style="font-size: 16.5px; line-height: 1.66; margin: 0 0 28px; max-width: 42ch; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Seven fields. I read every one myself and reply within a business day with an honest read on feasibility, shape and timeline. Engagements are fixed-scope and quoted per project.</p>
-        <p style="font-size: 15px; line-height: 1.66; margin: 0; max-width: 42ch; color: color-mix(in srgb, var(--color-text) 62%, transparent)">Prefer email? <a class="ns-link" href="{{ mailtoHref }}">{{ email }}</a></p>
+        <h1 aria-label="Tell me what's broken." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(34px, 4vw, 50px); line-height: 1.08; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.05em"><span aria-hidden="true"><span class="ns-w">Tell</span> <span class="ns-w">me</span> <span class="ns-w">what's</span> <span class="ns-w">broken.</span></span></h1>
+        <p style="font-size: 16.5px; line-height: 1.66; margin: 0 0 28px; max-width: 42ch; color: color-mix(in srgb, var(--color-text) 80%, transparent); animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both">Seven fields. I read every one myself and reply within a business day with an honest read on feasibility, shape and timeline. Engagements are fixed-scope and quoted per project.</p>
+        <p style="font-size: 15px; line-height: 1.66; margin: 0; max-width: 42ch; color: color-mix(in srgb, var(--color-text) 62%, transparent); animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .22s both">Prefer email? <a class="ns-link" href="{{ mailtoHref }}">{{ email }}</a></p>
       </div>
       <form ref="{{ formRef }}" onSubmit="{{ onSubmit }}" class="ns-form">
         <div class="ns-form-row">
@@ -511,6 +547,7 @@ const TYPED_LINES = [
 class Component extends DCLogic {
   state = { page: this.routeFromHash() || 'home', sent: '', sentName: '', sentText: '', sentMailto: '', mailCut: false, copied: '', sending: false, sendFailed: false, errors: {}, still: this.storedStill(), settled: false };
   mq = matchMedia('(prefers-reduced-motion: reduce)');
+  fine = matchMedia('(hover: hover) and (pointer: fine)');
   draft = this.loadDraft();
   scrolls = {};
 
@@ -518,6 +555,7 @@ class Component extends DCLogic {
   copyRef = (el) => { this.copyEl = el; };
   progressRef = (el) => { this.progressEl = el; };
   scanRef = (el) => { this.scanEl = el; };
+  starRef = (el) => { this.starEl = el; };
   cursorRef = (el) => { this.ringEl = el; this.syncRing(); };
   typedRef = (el) => {
     this.typedEl = el;
@@ -562,11 +600,13 @@ class Component extends DCLogic {
     this.onScroll = () => {
       // Remember how far down each page was read, so Back and Forward can return there.
       const r = this.routeFromHash();
-      if (!r || r === this.state.page) this.scrolls[this.state.page] = window.scrollY;
+      const y = this.sy = window.scrollY;
+      if (!r || r === this.state.page) this.scrolls[this.state.page] = y;
+      this.untilt();
       if (!this.progressEl) return;
       const h = document.documentElement;
       const max = h.scrollHeight - window.innerHeight;
-      this.progressEl.style.width = (max > 0 ? Math.min(100, (window.scrollY / max) * 100) : 0) + '%';
+      this.progressEl.style.width = (max > 0 ? Math.min(100, (y / max) * 100) : 0) + '%';
     };
     this.onKey = (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
@@ -583,9 +623,19 @@ class Component extends DCLogic {
       if (p && p !== this.state.page) this.go(p, back);
     };
     this.onMotionPref = () => this.setState({ settled: true }, () => this.applyMotion());
+    // A block that takes focus before it has arrived is shown at once, and stays shown after.
+    this.onFocusIn = (e) => {
+      const el = e.target && e.target.closest ? e.target.closest('[data-hide], [data-anim]') : null;
+      if (!el) return;
+      if (this.io) this.io.unobserve(el);
+      el.removeAttribute('data-hide');
+      el.removeAttribute('data-anim');
+      el.style.removeProperty('--ns-d');
+    };
     window.addEventListener('scroll', this.onScroll, { passive: true });
     window.addEventListener('keydown', this.onKey);
     window.addEventListener('hashchange', this.onHash);
+    window.addEventListener('focusin', this.onFocusIn);
     if (this.mq.addEventListener) this.mq.addEventListener('change', this.onMotionPref);
     // An anchor that is not one of the pages shows Home. Say so in the address, so Back from
     // another page has somewhere to return to.
@@ -600,9 +650,11 @@ class Component extends DCLogic {
     this.stopField();
     clearTimeout(this.typeT);
     clearTimeout(this.copyT);
+    clearTimeout(this.ioT);
     window.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('keydown', this.onKey);
     window.removeEventListener('hashchange', this.onHash);
+    window.removeEventListener('focusin', this.onFocusIn);
     if (this.mq.removeEventListener) this.mq.removeEventListener('change', this.onMotionPref);
     this.formRef(null);
   }
@@ -631,7 +683,8 @@ class Component extends DCLogic {
   }
 
   go(page, back) {
-    const patch = { page, settled: false };
+    // Back and Forward return to a page as it was left: in place, with no entrance to sit through.
+    const patch = { page, settled: !!back };
     if (this.state.page === 'start' && this.state.sent) Object.assign(patch, this.cleared());
     if (this.io) this.io.disconnect();
     this.setState(patch, () => {
@@ -640,9 +693,8 @@ class Component extends DCLogic {
       this.scrolls[page] = y;
       window.scrollTo(0, y);
       this.setTitle();
-      this.observe();
-      this.playPageIn();
-      this.navBurst();
+      this.observe(back);
+      if (!back) { this.playPageIn(); this.navBurst(.2); }
       this.focusHeading();
     });
   }
@@ -666,21 +718,26 @@ class Component extends DCLogic {
     this.focusHeading();
   };
 
+  // The cut between pages: the new page is already in place and focused, and settles in under
+  // 400ms while a line crosses the nav and the brand star turns a notch.
   playPageIn() {
     if (this.reduced()) return;
-    if (this.mainEl) {
-      this.mainEl.style.animation = 'none'; void this.mainEl.offsetWidth;
-      this.mainEl.style.animation = 'ns-page-in .6s cubic-bezier(.2,.7,.2,1) both';
-    }
-    if (this.scanEl) {
-      this.scanEl.style.animation = 'none'; void this.scanEl.offsetWidth;
-      this.scanEl.style.animation = 'ns-scan 1.1s cubic-bezier(.4,0,.2,1) both';
-    }
+    const play = (el, anim) => {
+      if (!el) return;
+      el.style.animation = 'none'; void el.offsetWidth;
+      el.style.animation = anim;
+    };
+    play(this.mainEl, 'ns-page-in .36s cubic-bezier(.2,.7,.2,1) both');
+    play(this.scanEl, 'ns-scan .38s cubic-bezier(.3,.6,.3,1) both');
+    play(this.starEl, 'ns-turn .38s cubic-bezier(.2,.7,.2,1)');
   }
 
-  navBurst() {
+  // Sends a few pulses through the field. A page change also lifts every star a little for a
+  // moment, staying under the .3 at which frame() gives a star its halo.
+  navBurst(lift) {
     const N = this.nodes;
     if (!N || !N.length || this.reduced()) return;
+    if (lift) for (const n of N) n.e = Math.max(n.e, lift);
     for (let k = 0; k < 5; k++) {
       const i = (Math.random() * N.length) | 0;
       N[i].e = 1;
@@ -701,11 +758,12 @@ class Component extends DCLogic {
   };
 
   applyMotion() {
-    document.querySelectorAll('[data-anim]').forEach((el) => { el.removeAttribute('data-anim'); el.style.animationDelay = ''; });
+    document.querySelectorAll('[data-anim]').forEach((el) => { el.removeAttribute('data-anim'); el.style.removeProperty('--ns-d'); });
+    this.untilt();
     this.syncRing();
     this.startTyping();
     if (this.raf) cancelAnimationFrame(this.raf);
-    this.raf = null; this.lastTs = 0;
+    this.raf = null; this.lastTs = 0; this.par = undefined;
     if (!this.fieldOn) return;
     if (this.reduced()) { this.pulses = []; this.rings = []; this.frame(0); }
     else this.runLoop();
@@ -745,6 +803,32 @@ class Component extends DCLogic {
     const a = (this.accent || [145, 132, 217]).join(',');
     el.style.backgroundImage = 'radial-gradient(260px circle at ' + Math.round(e.clientX - r.left) + 'px ' + Math.round(e.clientY - r.top) + 'px, rgba(' + a + ',.10), transparent 70%)';
     this.spotEl = el;
+  }
+
+  // Leans a card or row a little toward the pointer and lifts it. Mouse only, one write a frame.
+  tilt(e) {
+    const on = e.pointerType === 'mouse' && this.fine.matches && !this.reduced();
+    const el = on && e.target && e.target.closest ? e.target.closest('[data-tilt]') : null;
+    if (this.tiltEl && this.tiltEl !== el) this.untilt();
+    if (!el) return;
+    this.tiltEl = el; this.tiltX = e.clientX; this.tiltY = e.clientY;
+    if (this.tiltRaf) return;
+    this.tiltRaf = requestAnimationFrame(() => {
+      this.tiltRaf = 0;
+      const t = this.tiltEl;
+      if (!t) return;
+      const r = t.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const x = (this.tiltX - r.left) / r.width - .5, y = (this.tiltY - r.top) / r.height - .5;
+      // The angle shrinks as the element grows, so a wide row moves no further at its edges than a card.
+      const ax = Math.min(3, 440 / r.height), ay = Math.min(3, 440 / r.width);
+      t.style.transform = 'perspective(900px) rotateX(' + (y * 2 * ax).toFixed(2) + 'deg) rotateY(' + (-x * 2 * ay).toFixed(2) + 'deg) translate3d(0,-3px,0)';
+    });
+  }
+
+  untilt() {
+    if (this.tiltEl) this.tiltEl.style.transform = '';
+    this.tiltEl = null;
   }
 
   cursorHover(e) {
@@ -791,12 +875,14 @@ class Component extends DCLogic {
       this.pointer.x = e.clientX; this.pointer.y = e.clientY; this.pointer.active = true;
       if (this.rx === undefined) { this.rx = e.clientX; this.ry = e.clientY; }
       this.spotlight(e);
+      this.tilt(e);
       if (!matchMedia('(pointer: coarse)').matches && !this.reduced()) this.cursorHover(e);
     };
     this.onLeave = () => {
       this.pointer.active = false; this.pointer.x = this.pointer.y = -9999;
       if (this.ringEl) this.ringEl.style.opacity = '0';
       if (this.spotEl) { this.spotEl.style.backgroundImage = ''; this.spotEl = null; }
+      this.untilt();
     };
     this.onUp = (e) => { if (e.pointerType === 'touch') this.onLeave(); };
     this.onDown = (e) => {
@@ -829,7 +915,8 @@ class Component extends DCLogic {
 
   stopField() {
     if (this.raf) cancelAnimationFrame(this.raf);
-    this.raf = null; this.fieldOn = false;
+    if (this.tiltRaf) cancelAnimationFrame(this.tiltRaf);
+    this.raf = null; this.tiltRaf = 0; this.fieldOn = false;
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('pointermove', this.onMove);
     window.removeEventListener('pointerdown', this.onDown);
@@ -847,7 +934,7 @@ class Component extends DCLogic {
     for (let i = 0; i < count; i++) {
       const p = prev[i];
       const rx = p ? p.rx : Math.random(), ry = p ? p.ry : Math.random();
-      this.nodes.push({ x: rx * w, y: ry * h, vx: p ? p.vx : (Math.random() - .5) * .22, vy: p ? p.vy : (Math.random() - .5) * .22, e: 0, rx, ry });
+      this.nodes.push({ x: rx * w, y: ry * h, vx: p ? p.vx : (Math.random() - .5) * .22, vy: p ? p.vy : (Math.random() - .5) * .22, e: 0, rx, ry, z: p ? p.z : .5 + Math.random() });
     }
     this.adj = this.nodes.map(() => []);
     this.pulses = this.pulses.filter((pu) => pu.a < count && pu.b < count);
@@ -873,8 +960,19 @@ class Component extends DCLogic {
     const decay = Math.pow(0.955, dt);
     ctx.clearRect(0, 0, w, h);
 
+    // Scrolling carries the field a short way with the page, near stars (higher z) further than
+    // far ones. A long jump is not chased all the way, so a page change only nudges it.
+    let drift = 0;
+    if (!still) {
+      const want = (this.sy || 0) * -.08;
+      if (this.par === undefined) this.par = want;
+      const gap = Math.max(-80, Math.min(80, want - this.par));
+      drift = gap * Math.min(1, .1 * dt);
+      this.par = want - gap + drift;
+    }
+
     for (const n of N) {
-      n.x += n.vx * dt; n.y += n.vy * dt;
+      n.x += n.vx * dt; n.y += n.vy * dt + drift * n.z;
       if (p.active && !still) {
         const dx = p.x - n.x, dy = p.y - n.y, d = Math.hypot(dx, dy);
         if (d < 240 && d > 0.1) {
@@ -975,7 +1073,9 @@ class Component extends DCLogic {
     }
   }
 
-  observe() {
+  // Finds what can be revealed on the page just shown. What is already in view arrives in turn,
+  // starting with the headline, unless the visitor came by Back or Forward; the rest waits for scrolling.
+  observe(back) {
     const els = document.querySelectorAll('[data-reveal]:not([data-watch])');
     if (this.props.motion === 'none' || this.reduced() || !('IntersectionObserver' in window)) {
       els.forEach((el) => el.setAttribute('data-watch', ''));
@@ -983,31 +1083,60 @@ class Component extends DCLogic {
     }
     if (!this.io) {
       this.io = new IntersectionObserver((entries) => {
-        let i = 0;
+        this.ioSeen = true;
         entries.forEach((e) => {
           if (!e.isIntersecting) return;
-          const el = e.target;
-          this.io.unobserve(el);
-          el.removeAttribute('data-hide');
-          if (this.reduced()) return;
-          const done = (ev) => {
-            if (ev.target !== el) return;
-            el.removeEventListener('animationend', done);
-            el.removeAttribute('data-anim');
-            el.style.animationDelay = '';
-          };
-          el.style.animationDelay = (i++ * 70) + 'ms';
-          el.setAttribute('data-anim', '');
-          el.addEventListener('animationend', done);
+          this.io.unobserve(e.target);
+          this.reveal(e.target);
         });
       }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
     }
-    els.forEach((el) => {
+    this.revealAt = back ? 0 : performance.now() + 120;
+    // Measure everything first, then change it, so the page is laid out once.
+    const fold = innerHeight * 0.9;
+    const tops = Array.from(els, (el) => el.getBoundingClientRect().top);
+    let waiting = false;
+    els.forEach((el, i) => {
       el.setAttribute('data-watch', '');
-      if (el.getBoundingClientRect().top < innerHeight * 0.9) return;
+      if (tops[i] < fold) { if (!back) this.reveal(el); return; }
       el.setAttribute('data-hide', '');
       this.io.observe(el);
+      waiting = true;
     });
+    // An observer reports within a frame of being asked. If this one stays silent on a page
+    // that is on screen, stop waiting for it and show everything rather than leave it hidden.
+    clearTimeout(this.ioT);
+    this.ioSeen = false;
+    const check = () => {
+      if (this.ioSeen || this.gone) return;
+      if (document.hidden) { this.ioT = setTimeout(check, 2500); return; }
+      this.io.disconnect();
+      document.querySelectorAll('[data-hide]').forEach((el) => el.removeAttribute('data-hide'));
+    };
+    if (waiting) this.ioT = setTimeout(check, 2500);
+  }
+
+  // Each reveal takes the next place in a short queue, so a group that arrives together comes in
+  // one after another instead of all at once. Nothing waits more than 300ms for its turn.
+  reveal(el) {
+    el.removeAttribute('data-hide');
+    // No entrance for a block that already holds focus: it would play when the focus moved on.
+    if (this.reduced() || el.contains(document.activeElement)) return;
+    const now = performance.now();
+    const at = Math.min(Math.max(now, this.revealAt || 0), now + 300);
+    this.revealAt = at + 70;
+    // Ending or being cut short (printing, say) both leave the element in its finished state.
+    const done = (ev) => {
+      if (ev.target !== el) return;
+      el.removeEventListener('animationend', done);
+      el.removeEventListener('animationcancel', done);
+      el.removeAttribute('data-anim');
+      el.style.removeProperty('--ns-d');
+    };
+    el.style.setProperty('--ns-d', Math.round(at - now) + 'ms');
+    el.setAttribute('data-anim', '');
+    el.addEventListener('animationend', done);
+    el.addEventListener('animationcancel', done);
   }
 
   loadDraft() {
@@ -1223,7 +1352,7 @@ class Component extends DCLogic {
     const cur = (p) => (page === p ? 'page' : undefined);
     const inv = (k) => (errors[k] ? 'true' : undefined);
     return {
-      mainRef: this.mainRef, progressRef: this.progressRef, scanRef: this.scanRef,
+      mainRef: this.mainRef, progressRef: this.progressRef, scanRef: this.scanRef, starRef: this.starRef,
       cursorRef: this.cursorRef, typedRef: this.typedRef, bgRef: this.bgRef, formRef: this.formRef,
       copyRef: this.copyRef,
       brand,

@@ -39,6 +39,14 @@ command is not found.
   `index.html` for it. Each piece of text in the script block sits between single quotes:
   keep them, and inside the text use a curly apostrophe (’) rather than a straight one ('),
   or the pages stop showing. Check the page locally before publishing.
+- **Page headlines** have each word in its own `<span class="ns-w">…</span>`, so the words
+  can arrive one at a time. When you change a headline, keep one word (with its punctuation)
+  per span and a space between the spans. The same sentence is also written once, whole, in
+  the `aria-label` of the `<h1>`: that is what a screen reader reads, so change it to match.
+- **Motion** is marked in the template, not scripted per element: `data-reveal` brings a
+  block in as it scrolls into view (`data-reveal="row"` brings it in a column at a time), and
+  `data-tilt` leans a card or row toward the pointer. The Pause motion control in the footer
+  and the visitor's reduced-motion setting switch all of it off.
 - **Each page has its own address**: `#/solutions`, `#/work`, `#/about`, `#/start`.
 - **The enquiry form** posts through [Web3Forms](https://web3forms.com). Search
   `index.html` for `FORM_KEY` and paste your access key between the quotes. While that is
