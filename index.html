@@ -16,7 +16,7 @@
 <link rel="stylesheet" href="_ds/nocturne-5d02c887-d1b7-42e6-aab0-1502949b2367/styles.css">
 <style>
   :root { --ns-danger: #f0a3a3; }
-  html { background: var(--color-bg); color-scheme: dark; scroll-padding-top: 96px; }
+  html { background: var(--color-bg); color-scheme: dark; scroll-padding-top: 116px; }
   body { margin: 0; background:
       radial-gradient(1200px 720px at 82% -160px, color-mix(in srgb, var(--color-accent-900) 78%, transparent), transparent 60%),
       radial-gradient(1100px 800px at -10% 100%, color-mix(in srgb, black 32%, transparent), transparent 55%),
@@ -55,7 +55,8 @@
   .ns-note { margin: 0; font-size: 13.5px; line-height: 1.6; color: color-mix(in srgb, var(--color-text) 62%, transparent); }
   .input, .seg { border-color: var(--color-neutral-600); }
   .input { text-overflow: ellipsis; }
-  .input:hover:not(:focus-visible) { border-color: color-mix(in srgb, var(--color-text) 72%, transparent); }
+  .input::placeholder { color: color-mix(in srgb, var(--color-text) 56%, transparent); opacity: 1; text-overflow: ellipsis; }
+  .input:hover:not(:focus-visible):not([aria-invalid="true"]) { border-color: color-mix(in srgb, var(--color-text) 72%, transparent); }
   .input[aria-invalid="true"], .seg[aria-invalid="true"] { border-color: var(--ns-danger); }
   .btn[aria-disabled="true"] { opacity: .45; cursor: progress; }
   .ns-copy { margin: 0 0 20px; padding: 14px 16px; max-height: 280px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14.5px; line-height: 1.6; border: 1px solid var(--color-neutral-600); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-bg) 55%, transparent); color: color-mix(in srgb, var(--color-text) 88%, transparent); }
@@ -84,7 +85,7 @@
     .seg-opt:nth-child(n+3) { border-top: 1px solid var(--color-divider); }
   }
   @media (max-width: 480px) { .ns-typed { min-height: 2.8em; } }
-  @media (max-width: 640px) and (max-height: 480px) { .nav { position: static !important; } }
+  @media (max-width: 640px) and (max-height: 480px) { .nav { position: relative !important; } }
   @media (pointer: coarse) {
     .btn, .input, .seg-opt { min-height: 44px; }
     .input { font-size: 16px; }
@@ -93,7 +94,7 @@
     .ns-motion, footer a { padding-block: 12px; }
   }
   @media (hover: none), (pointer: coarse) { .ns-keys { display: none; } }
-  @media (forced-colors: active) { .seg-opt:has(input:checked) { outline: 2px solid Highlight; outline-offset: -2px; } }
+  @media (forced-colors: active) { .seg-opt:has(input:checked) { background: Highlight; color: HighlightText; forced-color-adjust: none; } }
   [data-still="true"] [data-reveal][data-hide] { opacity: 1; }
   [data-still="true"] [style*="ns-"], [data-still="true"] [data-reveal] { animation: none !important; }
   [data-settled="true"] [style*="ns-rise"], [data-settled="true"] [style*="ns-rule"], [data-settled="true"] [style*="ns-page-in"], [data-settled="true"] [style*="ns-scan"] { animation: none !important; }
@@ -558,17 +559,16 @@ class Component extends DCLogic {
       const p = { '1': 'home', '2': 'solutions', '3': 'work', '4': 'about', '5': 'start' }[e.key];
       if (p) { e.preventDefault(); this.nav(p)(); }
     };
-    this.onPop = () => { this.poppedAt = performance.now(); };
     this.onHash = () => {
-      const back = performance.now() - (this.poppedAt || -1e6) < 800;
-      this.poppedAt = 0;
+      // A change that did not start from one of this page's own links or keys is Back or Forward.
+      const back = performance.now() - (this.viaLink || -1e6) > 800;
+      this.viaLink = 0;
       const p = this.routeFromHash();
       if (p && p !== this.state.page) this.go(p, back);
     };
     this.onMotionPref = () => this.setState({ settled: true }, () => this.applyMotion());
     window.addEventListener('scroll', this.onScroll, { passive: true });
     window.addEventListener('keydown', this.onKey);
-    window.addEventListener('popstate', this.onPop);
     window.addEventListener('hashchange', this.onHash);
     if (this.mq.addEventListener) this.mq.addEventListener('change', this.onMotionPref);
     this.onScroll();
@@ -583,7 +583,6 @@ class Component extends DCLogic {
     clearTimeout(this.copyT);
     window.removeEventListener('scroll', this.onScroll);
     window.removeEventListener('keydown', this.onKey);
-    window.removeEventListener('popstate', this.onPop);
     window.removeEventListener('hashchange', this.onHash);
     if (this.mq.removeEventListener) this.mq.removeEventListener('change', this.onMotionPref);
     this.formRef(null);
@@ -600,13 +599,14 @@ class Component extends DCLogic {
   nav(page) {
     return (e) => {
       // Leave modified clicks alone so a link can still be opened in a new tab or window.
-      if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button)) return;
+      if (e && (e.metaKey || e.ctrlKey || e.shiftKey || e.button)) return;
       if (this.state.page === page) {
         if (e) e.preventDefault();
         if (page === 'start' && this.state.sent) this.backToForm();
         window.scrollTo(0, 0);
-      } else if (!e) {
-        location.hash = '#/' + (page === 'home' ? '' : page);
+      } else {
+        this.viaLink = performance.now();
+        if (!e) location.hash = '#/' + (page === 'home' ? '' : page);
       }
     };
   }
