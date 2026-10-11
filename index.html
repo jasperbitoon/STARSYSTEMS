@@ -94,7 +94,10 @@
     .ns-motion, footer a { padding-block: 12px; }
   }
   @media (hover: none), (pointer: coarse) { .ns-keys { display: none; } }
-  @media (forced-colors: active) { .seg-opt:has(input:checked) { background: Highlight; color: HighlightText; forced-color-adjust: none; } }
+  @media (forced-colors: active) {
+    .seg-opt:has(input:checked) { background: Highlight; color: HighlightText; forced-color-adjust: none; }
+    .seg-opt:has(input:checked):has(input:focus-visible) { outline-color: HighlightText; }
+  }
   [data-still="true"] [data-reveal][data-hide] { opacity: 1; }
   [data-still="true"] [style*="ns-"], [data-still="true"] [data-reveal] { animation: none !important; }
   [data-settled="true"] [style*="ns-rise"], [data-settled="true"] [style*="ns-rule"], [data-settled="true"] [style*="ns-page-in"], [data-settled="true"] [style*="ns-scan"] { animation: none !important; }
@@ -436,12 +439,12 @@
         <span style="height: 1px; background: color-mix(in srgb, var(--color-accent) 45%, transparent); width: 60%; transform-origin: left; animation: ns-rule .8s cubic-bezier(.2,.7,.2,1) .12s both"></span>
       </div>
       <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(30px, 3.6vw, 44px); line-height: 1.1; letter-spacing: -.015em; margin: 0 0 20px">One more step, {{ sentName }}.</h1>
-      <p style="font-size: 17px; line-height: 1.66; margin: 0 0 16px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Your email app should have opened with your answers filled in. Press send there and I'll reply within a business day.</p>
+      <sc-if value="{{ mailWhole }}"><p style="font-size: 17px; line-height: 1.66; margin: 0 0 16px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Your email app should have opened with your answers filled in. Press send there and I'll reply within a business day.</p></sc-if>
+      <sc-if value="{{ mailCut }}"><p style="font-size: 17px; line-height: 1.66; margin: 0 0 16px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Your email app should have opened with a shortened draft. Your answers were too long for an email link, so before you send, copy the full text below and paste it over the draft. I'll reply within a business day.</p></sc-if>
       <p style="font-size: 15px; line-height: 1.66; margin: 0 0 20px; color: color-mix(in srgb, var(--color-text) 70%, transparent)">Nothing opened? <a class="ns-link" href="{{ sentMailto }}">Open the email again</a>, or copy your answers below and send them to <a class="ns-link" href="{{ mailtoHref }}">{{ email }}</a>.</p>
-      <sc-if value="{{ mailCut }}"><p style="font-size: 15px; line-height: 1.66; margin: 0 0 20px; color: color-mix(in srgb, var(--color-text) 70%, transparent)">Your message was too long for an email link, so the draft holds only the start of it. Copy the full text below and paste it over the draft.</p></sc-if>
       <div class="ns-copy" ref="{{ copyRef }}" tabIndex="0" role="group" aria-label="Your answers">{{ sentText }}</div>
       <div style="display: flex; gap: 12px; flex-wrap: wrap">
-        <button type="button" class="btn btn-primary" onClick="{{ copyAnswers }}">{{ copyLabel }}</button>
+        <button type="button" class="btn btn-primary" style="min-width: 142px" onClick="{{ copyAnswers }}">{{ copyLabel }}</button>
         <button type="button" class="btn btn-secondary" onClick="{{ backToForm }}">Back to the form</button>
         <a href="#/" onClick="{{ goHome }}" class="btn btn-ghost">Back to the studio</a>
       </div>
@@ -524,7 +527,7 @@ class Component extends DCLogic {
     this.formEl = el;
     if (!el) return;
     el.noValidate = true;
-    // Short answers stay short enough that the email link can always carry them.
+    // An upper length for the short answers. mailtoFor shortens further when a link needs it.
     for (const k of ['name', 'company', 'email', 'timeline', 'stack']) if (el.elements[k]) el.elements[k].maxLength = k === 'email' ? 254 : 200;
     for (const k of FIELDS) {
       const v = this.draft[k];
@@ -573,6 +576,9 @@ class Component extends DCLogic {
     window.addEventListener('keydown', this.onKey);
     window.addEventListener('hashchange', this.onHash);
     if (this.mq.addEventListener) this.mq.addEventListener('change', this.onMotionPref);
+    // An anchor that is not one of the pages shows Home. Say so in the address, so Back from
+    // another page has somewhere to return to.
+    if (!this.routeFromHash()) { try { history.replaceState(history.state, '', '#/'); } catch (e) {} }
     this.onScroll();
     this.setTitle();
   }
@@ -994,7 +1000,12 @@ class Component extends DCLogic {
   }
 
   loadDraft() {
-    try { return JSON.parse(sessionStorage.getItem('ns-draft') || '{}') || {}; } catch (e) { return {}; }
+    try {
+      const raw = JSON.parse(sessionStorage.getItem('ns-draft') || '{}') || {};
+      const d = {};
+      for (const k of FIELDS) if (typeof raw[k] === 'string') d[k] = raw[k];
+      return d;
+    } catch (e) { return {}; }
   }
 
   saveDraft() {
@@ -1047,27 +1058,48 @@ class Component extends DCLogic {
     return m.head + (m.problem ? '\n\nThe problem:\n' + m.problem : '');
   }
 
-  // Builds the email link. A message too long for a link keeps every short answer and as much of
-  // the problem text as fits; cut says whether anything was left out.
+  // Builds the email link. A message too long for a link is shortened: the problem text first,
+  // then the short answers if that is still not enough. cut says whether anything was left out.
   mailtoFor(d) {
     const email = this.props.email ?? 'jasper@starsystems.dev';
     const enc = (t) => {
-      try { return encodeURIComponent(t); } catch (e) { return encodeURIComponent(t.replace(/[\uD800-\uDFFF]/g, '')); }
+      // Half of a character pair cannot go in a link; drop the stray half and keep the rest.
+      try { return encodeURIComponent(t); } catch (e) { return encodeURIComponent(t.replace(/[\uD800-\uDFFF]/gu, '')); }
     };
-    const m = this.messageFor(d);
-    const subject = 'Project enquiry' + (d.name ? ' from ' + d.name : '');
-    const url = (problem, note) => 'mailto:' + email + '?subject=' + enc(subject) + '&body='
-      + enc((m.head + (problem ? '\n\nThe problem:\n' + problem : '') + note).replace(/\n/g, '\r\n'));
-    const full = url(m.problem, '');
-    if (full.length <= MAILTO_MAX) return { href: full, cut: false };
+    const clip = (t, n) => {
+      const chars = Array.from(t);
+      return chars.length > n ? chars.slice(0, n).join('') + '…' : t;
+    };
+    // Only text counts, so a saved draft that has been tampered with cannot break the page.
+    const s = {};
+    for (const k of FIELDS) s[k] = typeof d[k] === 'string' ? d[k] : '';
+    // A long name is shortened in the subject, unless the "…" would cost more than it saves.
+    const short = clip(s.name, 60);
+    const who = enc(short).length < enc(s.name).length ? short : s.name;
+    const subject = 'Project enquiry' + (who ? ' from ' + who : '');
     const note = '\n\n[Shortened to fit an email link. The full text is on the page: please paste it in here.]';
-    const chars = Array.from(m.problem);
-    let lo = 0, hi = chars.length;
-    while (lo < hi) {
-      const mid = (lo + hi + 1) >> 1;
-      if (url(chars.slice(0, mid).join('') + '…', note).length <= MAILTO_MAX) lo = mid; else hi = mid - 1;
-    }
-    return { href: url(lo ? chars.slice(0, lo).join('') + '…' : '', note), cut: true };
+    // The link holding at most n characters of each short answer and p of the problem text.
+    // With p at 0 the problem section is left out.
+    const url = (n, p, cut) => {
+      const part = {};
+      for (const k of FIELDS) part[k] = k === 'problem' ? (p ? clip(s[k], p) : '') : clip(s[k], n);
+      return 'mailto:' + email + '?subject=' + enc(subject) + '&body='
+        + enc((this.textFor(part) + (cut ? note : '')).replace(/\n/g, '\r\n'));
+    };
+    const full = url(Infinity, Infinity, false);
+    if (full.length <= MAILTO_MAX) return { href: full, cut: false };
+    // The largest count up to max whose link fits.
+    const most = (max, make) => {
+      let lo = 0, hi = max;
+      while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (make(mid).length <= MAILTO_MAX) lo = mid; else hi = mid - 1;
+      }
+      return lo;
+    };
+    let href = url(Infinity, most(Array.from(s.problem).length, (i) => url(Infinity, i, true)), true);
+    if (href.length > MAILTO_MAX) href = url(most(254, (i) => url(i, 0, true)), 0, true);
+    return { href, cut: true };
   }
 
   cleared() { return { sent: '', sentName: '', sentText: '', sentMailto: '', mailCut: false, copied: '' }; }
@@ -1171,7 +1203,7 @@ class Component extends DCLogic {
       .catch(() => { clearTimeout(timer); failed(); });
   };
 
-  backToForm = () => this.setState(this.cleared(), () => this.focusHeading());
+  backToForm = () => this.setState(this.cleared(), this.shown);
 
   renderVals() {
     const brand = this.props.brand ?? 'Star Systems';
@@ -1197,7 +1229,7 @@ class Component extends DCLogic {
       goHome: this.goHome, goSolutions: this.goSolutions, goWork: this.goWork,
       goAbout: this.goAbout, goStart: this.goStart, skipToMain: this.skipToMain,
       notSent: !sent, sentOk: sent === 'ok', sentMail: sent === 'mail', sentName,
-      sentText, sentMailto, mailCut,
+      sentText, sentMailto, mailCut, mailWhole: !mailCut,
       copyLabel: copied === 'yes' ? 'Copied' : 'Copy my answers',
       copyStatus: copied === 'yes' ? 'Copied. Paste it into an email to ' + email + '.'
         : copied === 'no' ? 'The text is selected. Copy it with Ctrl+C, or Cmd+C on a Mac.' : '',
@@ -1205,7 +1237,7 @@ class Component extends DCLogic {
       submitLabel: !FORM_KEY ? 'Continue in email' : sending ? 'Sending…' : 'Send it over',
       sendNote: FORM_KEY
         ? 'Your answers reach me by email through Web3Forms, and I use them only to reply to you.'
-        : 'This opens your email app with your answers filled in. Nothing leaves your device until you press send there.',
+        : 'This opens your email app with your answers filled in. Nothing is sent to me until you press send there.',
       draftMailto: this.mailtoFor(this.draft).href,
       errName: errors.name || '', errEmail: errors.email || '', errBudget: errors.budget || '', errProblem: errors.problem || '',
       invName: inv('name'), invEmail: inv('email'), invBudget: inv('budget'), invProblem: inv('problem'),

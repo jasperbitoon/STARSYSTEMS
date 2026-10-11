@@ -15,8 +15,7 @@ python -m http.server 4173 --bind 127.0.0.1
 ```
 
 Then open <http://127.0.0.1:4173/>. On Windows, use `py` in place of `python` if the
-command is not found. Opening `index.html` straight from disk does not work; the page
-has to be served.
+command is not found.
 
 ## What's here
 
@@ -32,7 +31,14 @@ has to be served.
 
 ## Editing
 
-- **Wording and layout** live in the template inside `index.html`.
+- **Wording and layout** live in the template inside `index.html`. Some wording is in the
+  script block at the bottom instead: the typed lines in the Home hero (`TYPED_LINES`), the
+  Solutions lists, the per-field error messages, the button and note text that changes as
+  the form is used, the browser-tab name of each page, the Pause/Resume motion label, and
+  the subject and labels of the enquiry email. If a phrase is not where you expect, search
+  `index.html` for it. Each piece of text in the script block sits between single quotes:
+  keep them, and inside the text use a curly apostrophe (’) rather than a straight one ('),
+  or the pages stop showing. Check the page locally before publishing.
 - **Each page has its own address**: `#/solutions`, `#/work`, `#/about`, `#/start`.
 - **The enquiry form** posts through [Web3Forms](https://web3forms.com). Search
   `index.html` for `FORM_KEY` and paste your access key between the quotes. While that is
@@ -40,9 +46,10 @@ has to be served.
   and shows the same message on the page for them to copy.
 - **Brand name, contact email and the availability line** are the defaults in the
   `data-props` attribute of the script block; changing them there updates every page.
-  Three places are plain text and have to be edited by hand as well: the `noscript`
-  block just above the script (brand, tagline and email), the `<title>` and `og:` tags in
-  the head (brand and tagline), and `404.html` (brand).
+  Leave the `&quot;` marks around each value in place, and do not type a plain `"` inside
+  one. Three places are plain text and have to be edited by hand as well: the `noscript`
+  block just above the script (brand, tagline and email), the `<title>`, description and
+  `og:` tags in the head (brand and tagline), and `404.html` (brand).
 
 ## Publishing
 
