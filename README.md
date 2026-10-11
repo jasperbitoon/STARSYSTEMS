@@ -44,7 +44,8 @@ command is not found.
   per span and a space between the spans. The same sentence is also written once, whole, in
   the `aria-label` of the `<h1>`: that is what a screen reader reads, so change it to match.
 - **Motion** is marked in the template, not scripted per element: `data-reveal` brings a
-  block in as it scrolls into view (`data-reveal="row"` brings it in a column at a time), and
+  block in each time it scrolls into view, from either direction (`data-reveal="row"` brings
+  it in a column at a time), and
   `data-tilt` leans a card or row toward the pointer. The Pause motion control in the footer
   and the visitor's reduced-motion setting switch all of it off.
 - **Each page has its own address**: `#/solutions`, `#/work`, `#/about`, `#/start`.

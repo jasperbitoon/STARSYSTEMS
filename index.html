@@ -623,11 +623,10 @@ class Component extends DCLogic {
       if (p && p !== this.state.page) this.go(p, back);
     };
     this.onMotionPref = () => this.setState({ settled: true }, () => this.applyMotion());
-    // A block that takes focus before it has arrived is shown at once, and stays shown after.
+    // A block that takes focus before it has arrived is shown at once.
     this.onFocusIn = (e) => {
       const el = e.target && e.target.closest ? e.target.closest('[data-hide], [data-anim]') : null;
       if (!el) return;
-      if (this.io) this.io.unobserve(el);
       el.removeAttribute('data-hide');
       el.removeAttribute('data-anim');
       el.style.removeProperty('--ns-d');
@@ -646,7 +645,7 @@ class Component extends DCLogic {
 
   componentWillUnmount() {
     this.gone = true;
-    if (this.io) this.io.disconnect();
+    if (this.io) { this.io.disconnect(); this.ioOut.disconnect(); }
     this.stopField();
     clearTimeout(this.typeT);
     clearTimeout(this.copyT);
@@ -686,7 +685,7 @@ class Component extends DCLogic {
     // Back and Forward return to a page as it was left: in place, with no entrance to sit through.
     const patch = { page, settled: !!back };
     if (this.state.page === 'start' && this.state.sent) Object.assign(patch, this.cleared());
-    if (this.io) this.io.disconnect();
+    if (this.io) { this.io.disconnect(); this.ioOut.disconnect(); }
     this.setState(patch, () => {
       // Record the position being applied: arriving at the top of an unscrolled window fires no scroll event.
       const y = back ? (this.scrolls[page] || 0) : 0;
@@ -1082,14 +1081,24 @@ class Component extends DCLogic {
       return;
     }
     if (!this.io) {
+      this.inView = new WeakSet();
+      // Two watchers. The first says when a block has come far enough into view to arrive.
       this.io = new IntersectionObserver((entries) => {
         this.ioSeen = true;
         entries.forEach((e) => {
-          if (!e.isIntersecting) return;
-          this.io.unobserve(e.target);
-          this.reveal(e.target);
+          if (e.isIntersecting) this.inView.add(e.target); else this.inView.delete(e.target);
+          if (e.isIntersecting && e.target.hasAttribute('data-hide')) this.reveal(e.target);
         });
       }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      // The second says when a block has left the screen entirely. It then goes back to waiting,
+      // so it arrives the same way again whether the visitor scrolls down to it or back up.
+      this.ioOut = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) this.rearm(e.target);
+          // Reports can arrive bunched. A block sent back to waiting while it is in view arrives now.
+          else if (this.inView.has(e.target) && e.target.hasAttribute('data-hide')) this.reveal(e.target);
+        });
+      });
     }
     this.revealAt = back ? 0 : performance.now() + 120;
     // Measure everything first, then change it, so the page is laid out once.
@@ -1098,9 +1107,10 @@ class Component extends DCLogic {
     let waiting = false;
     els.forEach((el, i) => {
       el.setAttribute('data-watch', '');
+      this.io.observe(el);
+      this.ioOut.observe(el);
       if (tops[i] < fold) { if (!back) this.reveal(el); return; }
       el.setAttribute('data-hide', '');
-      this.io.observe(el);
       waiting = true;
     });
     // An observer reports within a frame of being asked. If this one stays silent on a page
@@ -1111,6 +1121,7 @@ class Component extends DCLogic {
       if (this.ioSeen || this.gone) return;
       if (document.hidden) { this.ioT = setTimeout(check, 2500); return; }
       this.io.disconnect();
+      this.ioOut.disconnect();
       document.querySelectorAll('[data-hide]').forEach((el) => el.removeAttribute('data-hide'));
     };
     if (waiting) this.ioT = setTimeout(check, 2500);
@@ -1137,6 +1148,14 @@ class Component extends DCLogic {
     el.setAttribute('data-anim', '');
     el.addEventListener('animationend', done);
     el.addEventListener('animationcancel', done);
+  }
+
+  // A block that has left the screen goes back to waiting. One that holds the focus stays as it is.
+  rearm(el) {
+    if (this.reduced() || el.contains(document.activeElement)) return;
+    el.removeAttribute('data-anim');
+    el.style.removeProperty('--ns-d');
+    el.setAttribute('data-hide', '');
   }
 
   loadDraft() {
