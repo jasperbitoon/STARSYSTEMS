@@ -524,6 +524,8 @@ class Component extends DCLogic {
     this.formEl = el;
     if (!el) return;
     el.noValidate = true;
+    // Short answers stay short enough that the email link can always carry them.
+    for (const k of ['name', 'company', 'email', 'timeline', 'stack']) if (el.elements[k]) el.elements[k].maxLength = k === 'email' ? 254 : 200;
     for (const k of FIELDS) {
       const v = this.draft[k];
       if (!v) continue;
@@ -616,7 +618,10 @@ class Component extends DCLogic {
     if (this.state.page === 'start' && this.state.sent) Object.assign(patch, this.cleared());
     if (this.io) this.io.disconnect();
     this.setState(patch, () => {
-      window.scrollTo(0, back ? (this.scrolls[page] || 0) : 0);
+      // Record the position being applied: arriving at the top of an unscrolled window fires no scroll event.
+      const y = back ? (this.scrolls[page] || 0) : 0;
+      this.scrolls[page] = y;
+      window.scrollTo(0, y);
       this.setTitle();
       this.observe();
       this.playPageIn();
