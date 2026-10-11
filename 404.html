@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="dark">
+<title>Page not found — Star Systems</title>
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #161826; color: #e9e9ed; font-family: system-ui, sans-serif; line-height: 1.6; }
+  main { max-width: 40ch; padding: 24px; }
+  h1 { font-size: 34px; font-weight: 500; line-height: 1.15; margin: 0 0 12px; }
+  p { margin: 0 0 24px; color: #b2b6ca; }
+  a { color: #b5abfc; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>That page isn't here.</h1>
+  <p>The link may be old or mistyped.</p>
+  <a id="home" href="./">Go to the Star Systems home page</a>
+</main>
+<script>
+  // GitHub Pages serves this file at whatever path was missing, so point the link at the site root.
+  var parts = location.pathname.split('/');
+  document.getElementById('home').href = /\.github\.io$/.test(location.hostname) && parts[1] ? '/' + parts[1] + '/' : '/';
+</script>
+</body>
+</html>
