@@ -59,6 +59,11 @@ command is not found.
   one. Three places are plain text and have to be edited by hand as well: the `noscript`
   block just above the script (brand, tagline and email), the `<title>`, description and
   `og:` tags in the head (brand and tagline), and `404.html` (brand).
+- **The city, Singapore,** is plain text: in the Home availability line, the footer, the first
+  About sentence, the `<title>`, description and `og:` tags, the `noscript` block, and the Home
+  title in `setTitle()`. Search `index.html` for `Singapore` to change it everywhere. The name
+  `Jasper Bitoon` comes from `builderName` on the pages, but is plain text in the description
+  and `og:description` tags and the `noscript` block.
 
 ## Publishing
 
