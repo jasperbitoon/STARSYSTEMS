@@ -49,15 +49,19 @@ command is not found.
   it in a column at a time), and
   `data-tilt` leans a card or row toward the pointer. The Pause motion control in the footer
   and the visitor's reduced-motion setting switch all of it off.
-- **The Home film** is the section between the four facts and "What I build". Its words are
-  ordinary text in the template inside `index.html` (search for `ns-film`); the five short
-  sentences on the tiles are the same `TYPED_LINES` the hero types out. The 3D itself is
-  `motion/film.js`: the scroll positions of each scene, the camera stops and the ring sizes are
-  the constants at the top of that file. It plays only in a window at least 900 by 540 pixels
-  with motion allowed. Phones, small windows, Pause motion and the visitor's reduced-motion
-  setting get `motion/film-still.webp` and the same words instead, and never download the 3D
-  library. A machine that cannot keep up is switched to the still picture as well. If the look
-  of the last scene changes, make the still picture again from it.
+- **The Home film** is the top of the Home page: the hero itself, pinned while the visitor
+  scrolls through four scenes. Its words are ordinary text in the template inside `index.html`
+  (search for `ns-film`): the headline, the paragraph and buttons, two later lines, and the
+  five short labels under the cards, which are the same `TYPED_LINES` the plain hero types out.
+  The 3D itself is `motion/film.js`: the scroll positions of each scene, the camera stops, the
+  five card positions and the ring sizes are the constants at the top of that file. It draws at
+  up to the screen's full resolution and steps the picture down on a machine that cannot hold
+  it. The sound is made in the browser and stays off until the visitor presses Sound. It plays
+  only in a window at least 900 by 540 pixels with motion allowed. Phones, small windows, Pause
+  motion and the visitor's reduced-motion setting get the plain hero, the same words and
+  `motion/film-still.webp` instead, and never download the 3D library. A machine that cannot
+  keep up is switched to the still picture as well. If the look of the last scene changes, make
+  the still picture again from it.
 - **Each page has its own address**: `#/solutions`, `#/work`, `#/about`, `#/start`.
 - **The enquiry form** posts through [Web3Forms](https://web3forms.com). Search
   `index.html` for `FORM_KEY` and paste your access key between the quotes. While that is
