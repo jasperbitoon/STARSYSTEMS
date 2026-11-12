@@ -765,7 +765,7 @@ export function mount({ root, three, onActive }) {
   // active starts unknown, so the page is always told once whether the film is on screen.
   let gone = false, raf = 0, last = 0, p = -1, near = false, active = null;
   let scene = null, loading = false, live = false, frozen = false, liveAt = 0;
-  let tier = window.__nsFilmTier === undefined ? 1 : window.__nsFilmTier, dof = 1, slow = 0, frames = 0, good = 0, lockUp = false;
+  let tier = window.__nsFilmTier === undefined ? 1 : window.__nsFilmTier, dof = 1, slow = 0, frames = 0, good = 0, lockUp = false, warm = 0, wn = 0, wt = 0;
   let px = 0, py = 0, tx = 0, ty = 0, yaw = 0, yawV = 0, drag = null;
   const out = [0, 0, 0];
   let pinW = 0;
@@ -858,18 +858,22 @@ export function mount({ root, three, onActive }) {
 
     // Quality: hold the best picture this machine can draw smoothly. Slow frames step it down
     // (fewer pixels, then no soft focus, then the still picture); a long smooth run steps it up once.
+    // It is judged every 90 frames or 2.5 seconds, whichever comes first, so a machine that only
+    // manages a few frames a second reaches the still picture in seconds, not minutes.
     if (window.__nsFilmNoGuard) return;
-    frames++;
-    if (frames < 30) return;
+    warm += real;
+    if (frames++ < 30 && warm < 1500) return;
+    wn++; wt += real;
     if (dt > 24) { slow++; good = 0; } else good++;
-    if (frames % 90 === 0) {
-      if (slow > 40) {
+    if (wn >= 90 || wt >= 2500) {
+      if (wn >= 6 && slow > wn * .45) {
         lockUp = true;
-        if (tier < BUDGETS.length - 1) { tier++; size(); }
+        // Under about ten frames a second: straight to the lightest picture.
+        if (tier < BUDGETS.length - 1) { tier = wt / wn > 100 ? BUDGETS.length - 1 : tier + 1; size(); }
         else if (dof) dof = 0;
         else { freeze(); return; }
       }
-      slow = 0;
+      wn = 0; wt = 0; slow = 0;
     }
     if (!lockUp && good > 240 && tier > 0) { tier--; good = 0; lockUp = tier === 0; size(); }
   }
@@ -959,7 +963,7 @@ export function mountView({ root, three, name }) {
   if (!V) return { destroy() {} };
   const canvas = document.createElement('canvas');
   root.appendChild(canvas);
-  let gone = false, raf = 0, last = 0, scene = null, loading = false, liveAt = -1, k = -1, dof = 1, slow = 0, frames = 0;
+  let gone = false, raf = 0, last = 0, scene = null, loading = false, liveAt = -1, k = -1, dof = 1, slow = 0, frames = 0, warm = 0, wn = 0, wt = 0;
   let px = 0, py = 0, tx = 0, ty = 0;
   const t0 = performance.now();
   const shot = { pos: [0, 0, 0], at: [0, 0, 0], off: [0, 0], range: V.range, rings: V.rings ? [0, 0, 0] : null };
@@ -992,12 +996,13 @@ export function mountView({ root, three, name }) {
 
     // A machine that cannot keep up loses the soft focus first, then the view itself.
     if (window.__nsFilmNoGuard) return;
-    frames++;
-    if (frames < 30) return;
+    warm += real;
+    if (frames++ < 30 && warm < 1500) return;
+    wn++; wt += real;
     if (real > 24) slow++;
-    if (frames % 90 === 0) {
-      if (slow > 40) { if (dof) dof = 0; else { halt(); return; } }
-      slow = 0;
+    if (wn >= 90 || wt >= 2500) {
+      if (wn >= 6 && slow > wn * .45) { if (dof) dof = 0; else { halt(); return; } }
+      wn = 0; wt = 0; slow = 0;
     }
   }
 

@@ -205,6 +205,8 @@
     .ns-view[data-view="work"] { right: calc(-1 * min(90px, var(--ns-out))); top: 10px; width: 560px; height: 430px; }
     .ns-view[data-view="about"] { right: calc(-1 * min(40px, var(--ns-out))); top: 330px; width: 520px; height: 520px; }
     .ns-view[data-view="start"] { left: calc(-1 * min(60px, var(--ns-out))); top: 440px; width: 540px; height: 340px; }
+    /* Once the form has gone its answers fill the left, so the view moves to the empty right. */
+    .ns-view[data-view="start"][data-view-go="1"] { left: auto; right: calc(-1 * min(40px, var(--ns-out))); top: 56px; width: min(600px, 44vw); height: auto; aspect-ratio: 4 / 3; }
   }
   @media print {
     .ns-view { display: none !important; }
