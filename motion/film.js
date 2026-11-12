@@ -397,7 +397,7 @@ function buildScene(THREE, canvas, noteCount) {
     const mat = keep(faceMats[NOTE_KINDS[i % NOTE_KINDS.length]].clone());
     mat.userData.lift = 1.5;
     // Less mirror on these five: the drawing has to read at a glance.
-    mat.envMapIntensity = .2; mat.clearcoatRoughness = .32;
+    mat.envMap = scene.environment; mat.clearcoat = .4; mat.clearcoatRoughness = .32;
     const mesh = new THREE.InstancedMesh(tileGeo, [mat, edgeMat], 1);
     mesh.frustumCulled = false;
     scene.add(mesh);
@@ -543,6 +543,7 @@ function buildScene(THREE, canvas, noteCount) {
   scene.add(glow, streakH, streakV, star);
 
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), QF = new THREE.Quaternion(), QR = new THREE.Quaternion();
+  const YPI = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
   const ID = new THREE.Quaternion(), SC = new THREE.Vector3(), UP = new THREE.Vector3(), ZERO = new THREE.Vector3(), LM = new THREE.Matrix4();
   const RIGHT = new THREE.Vector3(), CUP = new THREE.Vector3();
   const cam = [0, 0, 0], proj = new THREE.Vector3();
@@ -582,7 +583,13 @@ function buildScene(THREE, canvas, noteCount) {
 
     starLight.intensity = ig * 9;
     scene.environmentIntensity = lerp(.32, .55, ig);
-    for (const m of faceMats) m.emissiveIntensity = lerp(1, 1.2, ig) * lerp(m.userData.lift || 1, 1, settle * .6);
+    // The five named cards are brightest in the opening. As the camera moves past them toward the
+    // star they fall out of focus, so they dim first: a bright card out of focus turns to a white blur.
+    const lift = lerp(lerp(1.5, .5, smooth(.2, .36, p)), 1, smooth(.46, .6, p));
+    for (const m of faceMats) {
+      m.emissiveIntensity = lerp(1, 1.2, ig) * (m.userData.lift ? lift : 1);
+      if (m.userData.lift) m.envMapIntensity = scene.environmentIntensity * .3;
+    }
     edgeMat.emissiveIntensity = lerp(.3, .55, ig);
     ringMat.opacity = smooth(.6, .84, p) * .5;
     sky.uniforms.uLift.value = ig * .6;
@@ -625,6 +632,14 @@ function buildScene(THREE, canvas, noteCount) {
       UP.set(0, 1, 0).applyQuaternion(QR);
       LM.lookAt(ZERO, t.pos, UP);
       QF.setFromRotationMatrix(LM);
+      // A tile is drawn on both sides, so it turns whichever way is shorter. Chosen once, from
+      // where it starts: no tile ever swings through edge-on in front of the camera.
+      if (t.flip === undefined) {
+        LM.lookAt(ZERO, t.S, UP.set(0, 1, 0));
+        Q.setFromRotationMatrix(LM);
+        t.flip = Math.abs(t.q.dot(Q)) < Math.abs(t.q.dot(Q.multiply(YPI)));
+      }
+      if (t.flip) QF.multiply(YPI);
       Q.copy(t.q).slerp(QF, face);
       SC.setScalar(lerp(t.scale, .6, e) * lerp(.55, 1, born));
       M.compose(t.pos, Q, SC);
