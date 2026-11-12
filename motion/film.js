@@ -560,8 +560,8 @@ function buildScene(THREE, canvas, noteCount) {
   }
 
   // s: { p, time, intro (0..1, the opening), px, py (pointer, -1..1), yaw (drag), dof (0..1) }
-  // and, for the smaller views on the other pages, view: { pos, at, off, range, rings }: where the
-  // camera stands, what it looks at, and how much of each ring has arrived.
+  // and, for the smaller views on the other pages, view: { pos, at, off, range }: where the
+  // camera stands, what it looks at, and how deep the sharp zone is.
   function update(s) {
     const p = s.p, time = s.time, v = s.view;
     const ig = smooth(T.ignite[0], T.ignite[1], p);
@@ -594,7 +594,7 @@ function buildScene(THREE, canvas, noteCount) {
       if (m.userData.lift) m.envMapIntensity = scene.environmentIntensity * .3;
     }
     edgeMat.emissiveIntensity = lerp(.3, .55, ig);
-    ringMats.forEach((m, i) => { m.opacity = smooth(.6, .84, p) * .5 * (v && v.rings ? v.rings[i] : 1); });
+    for (const m of ringMats) m.opacity = smooth(.6, .84, p) * .5;
     sky.uniforms.uLift.value = ig * .6;
     dust.uniforms.uTime.value = time; dust.uniforms.uGather.value = gather; dust.uniforms.uIgnite.value = ig;
     dust.uniforms.uSettle.value = settle; dust.uniforms.uYaw.value = s.yaw;
@@ -644,7 +644,7 @@ function buildScene(THREE, canvas, noteCount) {
       }
       if (t.flip) QF.multiply(YPI);
       Q.copy(t.q).slerp(QF, face);
-      SC.setScalar(lerp(t.scale, .6, e) * lerp(.55, 1, born) * (v && v.rings ? v.rings[t.ri] : 1));
+      SC.setScalar(lerp(t.scale, .6, e) * lerp(.55, 1, born));
       M.compose(t.pos, Q, SC);
       t.mesh.setMatrixAt(t.slot, M);
     }
@@ -949,13 +949,15 @@ export function mount({ root, three, onActive }) {
 //
 // Each page gets one small view. It goes from shot a to shot b either as the page scrolls or,
 // with go, when the page says so (the Start page, once the form has gone). p is the film's own
-// playhead: 0 is loose cards, 1 is the finished system.
+// playhead: 0 is loose cards, 1 is the finished system. open: [from, seconds] plays the film from
+// that point up to the view's own p when the page opens, so every page arrives with a few seconds
+// of motion. sway is how far the camera keeps drifting round its subject afterwards, in radians.
 
 const VIEWS = {
-  solutions: { a: { p: 1, pos: [0, 6.2, 15], at: [0, -.4, 0] }, b: { p: 1, pos: [0, 12.2, 10.6], at: [0, -.4, 0] }, range: 8, rings: true },
-  work: { a: { p: .02, pos: [-2.5, -1.2, 7.2], at: [-1.1, -1.5, 3.4] }, b: { p: .02, pos: [.5, -1.1, 7.1], at: [-1.1, -1.5, 3.4] }, range: 1.7 },
-  about: { a: { p: 1, pos: [0, 1.5, 9.4], at: [0, .15, 0] }, b: { p: 1, pos: [0, 3.4, 9.2], at: [0, .15, 0] }, range: 4.2 },
-  start: { a: { p: .03, pos: [.5, .15, 12.6], at: [.5, .15, 4] }, b: { p: 1, pos: [0, 5.6, 13.6], at: [0, -.4, 0] }, range: 6, go: true, tau: 950 },
+  solutions: { a: { p: 1, pos: [0, 6.2, 15], at: [0, -.4, 0] }, b: { p: 1, pos: [0, 12.2, 10.6], at: [0, -.4, 0] }, range: 8, open: [.45, 3.8], sway: .16 },
+  work: { a: { p: .02, pos: [-2.5, -1.2, 7.2], at: [-1.1, -1.5, 3.4] }, b: { p: .02, pos: [.5, -1.1, 7.1], at: [-1.1, -1.5, 3.4] }, range: 1.7, sway: .2 },
+  about: { a: { p: 1, pos: [0, 1.5, 9.4], at: [0, .15, 0] }, b: { p: 1, pos: [0, 3.4, 9.2], at: [0, .15, 0] }, range: 4.2, open: [.27, 4.4], sway: .2 },
+  start: { a: { p: .03, pos: [.5, .15, 12.6], at: [.5, .15, 4] }, b: { p: 1, pos: [0, 5.6, 13.6], at: [0, -.4, 0] }, range: 6, go: true, tau: 950, sway: .1 },
 };
 
 export function mountView({ root, three, name }) {
@@ -966,7 +968,8 @@ export function mountView({ root, three, name }) {
   let gone = false, raf = 0, last = 0, scene = null, loading = false, liveAt = -1, k = -1, dof = 1, slow = 0, frames = 0, warm = 0, wn = 0, wt = 0;
   let px = 0, py = 0, tx = 0, ty = 0;
   const t0 = performance.now();
-  const shot = { pos: [0, 0, 0], at: [0, 0, 0], off: [0, 0], range: V.range, rings: V.rings ? [0, 0, 0] : null };
+  const shot = { pos: [0, 0, 0], at: [0, 0, 0], off: [0, 0], range: V.range };
+  let pNow = 0;
   const fit = (s) => { const w = root.clientWidth, h = root.clientHeight; if (w && h) s.resize(w, h, Math.min(window.devicePixelRatio || 1, 2)); };
 
   function frame(ts) {
@@ -988,11 +991,18 @@ export function mountView({ root, three, name }) {
     }
     const e = V.go ? easeIO(k) : k;
     for (let i = 0; i < 3; i++) { shot.pos[i] = lerp(V.a.pos[i], V.b.pos[i], e); shot.at[i] = lerp(V.a.at[i], V.b.at[i], e); }
-    // On the Solutions page the three orbits arrive one after another, inner first.
-    if (shot.rings) for (let i = 0; i < 3; i++) shot.rings[i] = easeOut((age - .3 - i * .55) / 1.1);
+    // The camera never quite stands still: it drifts a little way round what it is looking at.
+    const sw = Math.sin(clock * .33) * V.sway, cs = Math.cos(sw), sn = Math.sin(sw);
+    const dx = shot.pos[0] - shot.at[0], dz = shot.pos[2] - shot.at[2];
+    shot.pos[0] = shot.at[0] + dx * cs + dz * sn;
+    shot.pos[2] = shot.at[2] - dx * sn + dz * cs;
+    shot.pos[1] += Math.sin(clock * .21) * V.sway * .9;
+    // The opening: a few seconds of the film itself, ending on this view's own moment.
+    pNow = lerp(V.a.p, V.b.p, e);
+    if (V.open) pNow = lerp(V.open[0], pNow, easeIO(clamp(age / V.open[1])));
     const lean = 1 - Math.exp(-Math.min(real, 64) / 260);
     px += (tx - px) * lean; py += (ty - py) * lean;
-    scene.update({ p: lerp(V.a.p, V.b.p, e), time: clock, intro: clamp(age / 1.9), px: snap ? 0 : px * .6, py: snap ? 0 : py * .6, yaw: 0, dof, view: shot });
+    scene.update({ p: pNow, time: clock, intro: clamp(age / 1.9), px: snap ? 0 : px * .6, py: snap ? 0 : py * .6, yaw: 0, dof, view: shot });
 
     // A machine that cannot keep up loses the soft focus first, then the view itself.
     if (window.__nsFilmNoGuard) return;
@@ -1028,7 +1038,7 @@ export function mountView({ root, three, name }) {
   const ro = new ResizeObserver(() => { if (scene) fit(scene); });
   ro.observe(root);
 
-  if (window.__nsFilmDebug) window.__nsView = { get scene() { return scene; }, get k() { return k; }, name, canvas };
+  if (window.__nsFilmDebug) window.__nsView = { get scene() { return scene; }, get k() { return k; }, get p() { return pNow; }, name, canvas };
 
   return {
     destroy() {

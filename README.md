@@ -63,14 +63,16 @@ command is not found.
   keep up is switched to the still picture as well. If the look of the last scene changes, make
   the still picture again from it.
 - **The other four pages** each carry one small view of the same 3D system, behind the words:
-  the whole system beside the Solutions headline (its three orbits arrive one after another), one
-  glass card on Work, the star close up on About, and loose cards beside the Start form that
-  gather into the system once the form has gone. Each is an empty `ns-view` box in the template
-  that `mountView` in `motion/film.js` fills; where the camera stands on each page is the `VIEWS`
-  list near the end of that file, and where the box sits is the `ns-view` rules in the styles.
-  They add no words and change no layout. They show only in a window at least 1200 pixels wide
-  with motion allowed, and are fetched only when on screen; everywhere else the pages are exactly
-  as before.
+  the whole system beside the Solutions headline, one glass card on Work, the star close up on
+  About, and loose cards beside the Start form that gather into the system once the form has
+  gone. Solutions and About open by playing a few seconds of the film (cards falling into orbit,
+  the star lighting), and every view keeps drifting slowly afterwards and answers the scroll and
+  the pointer. Each is an empty `ns-view` box in the template that `mountView` in
+  `motion/film.js` fills; where the camera stands on each page, how it opens and how far it
+  drifts is the `VIEWS` list near the end of that file, and where the box sits is the `ns-view`
+  rules in the styles. They add no words and change no layout. They show wherever the Home film
+  plays (a window at least 900 by 540 pixels, motion allowed) and are fetched only when on
+  screen; everywhere else the pages are exactly as before.
 - **Each page has its own address**: `#/solutions`, `#/work`, `#/about`, `#/start`.
 - **The enquiry form** posts through [Web3Forms](https://web3forms.com). Search
   `index.html` for `FORM_KEY` and paste your access key between the quotes. While that is
