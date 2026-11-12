@@ -25,7 +25,7 @@ command is not found.
 | `support.js` | The runtime that renders `index.html`, included unmodified from the design tool the site was drawn in |
 | `_ds/` | Nocturne design system from the same tool: colour, type and component styles |
 | `vendor/` | React and ReactDOM 18.3.1, and three.js r170 (the 3D library the Home film uses), served locally |
-| `motion/` | The Home film: `film.js` draws and plays it, `film-still.webp` is the picture shown where it does not play |
+| `motion/` | The 3D: `film.js` draws and plays the Home film and the small views on the other pages, `film-still.webp` is the picture shown where the film does not play |
 | `fonts/` | Inter, Latin subset, with its licence |
 | `404.html` | Not-found page for GitHub Pages |
 | `.nojekyll` | Tells GitHub Pages to serve `_ds/` as-is |
@@ -62,6 +62,15 @@ command is not found.
   `motion/film-still.webp` instead, and never download the 3D library. A machine that cannot
   keep up is switched to the still picture as well. If the look of the last scene changes, make
   the still picture again from it.
+- **The other four pages** each carry one small view of the same 3D system, behind the words:
+  the whole system beside the Solutions headline (its three orbits arrive one after another), one
+  glass card on Work, the star close up on About, and loose cards beside the Start form that
+  gather into the system once the form has gone. Each is an empty `ns-view` box in the template
+  that `mountView` in `motion/film.js` fills; where the camera stands on each page is the `VIEWS`
+  list near the end of that file, and where the box sits is the `ns-view` rules in the styles.
+  They add no words and change no layout. They show only in a window at least 1200 pixels wide
+  with motion allowed, and are fetched only when on screen; everywhere else the pages are exactly
+  as before.
 - **Each page has its own address**: `#/solutions`, `#/work`, `#/about`, `#/start`.
 - **The enquiry form** posts through [Web3Forms](https://web3forms.com). Search
   `index.html` for `FORM_KEY` and paste your access key between the quotes. While that is

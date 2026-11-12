@@ -191,7 +191,23 @@
   .ns-film-sound[aria-pressed="true"] [data-s="off"], .ns-film-sound[aria-pressed="false"] [data-s="on"] { display: none; }
   /* While the film is on screen it is the only thing moving: the page background rests. */
   html[data-film-hold] [style*="ns-drift"] { animation-play-state: paused; }
+  /* The other pages: one small view of the same 3D system each (motion/film.js, mountView).
+     It sits behind the page's words and is only there on a wide window with motion allowed. */
+  .ns-page { position: relative; z-index: 0; }
+  .ns-view { display: none; }
+  @media (min-width: 1200px) {
+    .ns-view[data-view-on="on"] { display: block; position: absolute; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 1.4s ease; -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 48%, transparent 100%); mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 48%, transparent 100%); }
+    .ns-view[data-view-live] { opacity: 1; }
+    .ns-view canvas { display: block; width: 100%; height: 100%; }
+    /* --ns-out: how far a view may reach past the text column without leaving the window. */
+    .ns-view { --ns-out: max(0px, (100vw - 1160px) / 2 - 16px); }
+    .ns-view[data-view="solutions"] { right: calc(-1 * min(150px, var(--ns-out))); top: 24px; width: min(600px, 40vw); aspect-ratio: 4 / 3; }
+    .ns-view[data-view="work"] { right: calc(-1 * min(90px, var(--ns-out))); top: 10px; width: 560px; height: 430px; }
+    .ns-view[data-view="about"] { right: calc(-1 * min(40px, var(--ns-out))); top: 330px; width: 520px; height: 520px; }
+    .ns-view[data-view="start"] { left: calc(-1 * min(60px, var(--ns-out))); top: 440px; width: 540px; height: 340px; }
+  }
   @media print {
+    .ns-view { display: none !important; }
     .ns-film { height: auto !important; }
     .ns-film-pin { position: static !important; height: auto !important; }
     .ns-film-canvas, .ns-film-still, .ns-film-rail, .ns-film-cue, .ns-film-sound, .ns-film-notes { display: none !important; }
@@ -381,7 +397,8 @@
   </sc-if>
 
   <sc-if value="{{ isSolutions }}" hint-placeholder-val="{{ false }}">
-  <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+  <div class="ns-page" style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+    <div class="ns-view" data-view="solutions" data-view-on="{{ filmAttr }}" ref="{{ viewRef }}" aria-hidden="true"></div>
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">Solutions</span>
     <h1 aria-label="Whatever the problem is, the answer is a system." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 5vw, 64px); line-height: 1.06; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.055em; max-width: 20ch"><span aria-hidden="true"><span class="ns-w">Whatever</span> <span class="ns-w">the</span> <span class="ns-w">problem</span> <span class="ns-w">is,</span> <span class="ns-w">the</span> <span class="ns-w">answer</span> <span class="ns-w">is</span> <span class="ns-w">a</span> <span class="ns-w">system.</span></span></h1>
     <p style="animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both; font-size: 18px; line-height: 1.62; max-width: 58ch; margin: 0 0 64px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Most engagements start as a sentence: sales lives in three spreadsheets, onboarding takes a week of email, nobody can find the file. The shape of the build follows from the problem, not from a service menu.</p>
@@ -438,7 +455,8 @@
   </sc-if>
 
   <sc-if value="{{ isWork }}" hint-placeholder-val="{{ false }}">
-  <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+  <div class="ns-page" style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+    <div class="ns-view" data-view="work" data-view-on="{{ filmAttr }}" ref="{{ viewRef }}" aria-hidden="true"></div>
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">Work</span>
     <h1 aria-label="Things I've built, and what they changed." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 5vw, 64px); line-height: 1.06; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.055em; max-width: 18ch"><span aria-hidden="true"><span class="ns-w">Things</span> <span class="ns-w">I've</span> <span class="ns-w">built,</span> <span class="ns-w">and</span> <span class="ns-w">what</span> <span class="ns-w">they</span> <span class="ns-w">changed.</span></span></h1>
     <p style="animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both; font-size: 18px; line-height: 1.62; max-width: 56ch; margin: 0 0 56px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">A young studio with a short list on purpose. Everything here I build end to end.</p>
@@ -469,7 +487,8 @@
   </sc-if>
 
   <sc-if value="{{ isAbout }}" hint-placeholder-val="{{ false }}">
-  <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+  <div class="ns-page" style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+    <div class="ns-view" data-view="about" data-view-on="{{ filmAttr }}" ref="{{ viewRef }}" aria-hidden="true"></div>
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">About</span>
     <div class="ns-split-about">
       <div>
@@ -499,7 +518,8 @@
   </sc-if>
 
   <sc-if value="{{ isStart }}" hint-placeholder-val="{{ false }}">
-  <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+  <div class="ns-page" style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+    <div class="ns-view" data-view="start" data-view-on="{{ filmAttr }}" data-view-go="{{ viewGo }}" ref="{{ viewRef }}" aria-hidden="true"></div>
     <sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
     <div class="ns-split-start">
       <div>
@@ -672,6 +692,13 @@ class Component extends DCLogic {
     this.filmEl = el;
     this.syncFilm();
   };
+  // The smaller 3D views on the other four pages: the same system, seen from somewhere else.
+  viewRef = (el) => {
+    if (el === this.viewEl) return;
+    this.stopView();
+    this.viewEl = el;
+    this.syncView();
+  };
   formRef = (el) => {
     if (this.formEl && this.formEl !== el) {
       this.formEl.removeEventListener('input', this.onDraft);
@@ -740,7 +767,7 @@ class Component extends DCLogic {
     window.addEventListener('hashchange', this.onHash);
     window.addEventListener('focusin', this.onFocusIn);
     if (this.mq.addEventListener) this.mq.addEventListener('change', this.onMotionPref);
-    this.onFilmFit = () => this.setState({ filmFit: this.filmFits() }, () => this.syncFilm());
+    this.onFilmFit = () => this.setState({ filmFit: this.filmFits() }, () => { this.syncFilm(); this.syncView(); });
     if (this.filmMq && this.filmMq.addEventListener) this.filmMq.addEventListener('change', this.onFilmFit);
     // An anchor that is not one of the pages shows Home. Say so in the address, so Back from
     // another page has somewhere to return to.
@@ -763,6 +790,7 @@ class Component extends DCLogic {
     if (this.mq.removeEventListener) this.mq.removeEventListener('change', this.onMotionPref);
     if (this.filmMq && this.filmMq.removeEventListener) this.filmMq.removeEventListener('change', this.onFilmFit);
     this.stopFilm();
+    this.stopView();
     this.formRef(null);
   }
 
@@ -891,6 +919,25 @@ class Component extends DCLogic {
     this.holdField(false);
   }
 
+  syncView() {
+    if (!this.viewEl || !this.filmWanted()) { this.stopView(); return; }
+    if (this.view || this.viewWait) return;
+    const at = (path) => new URL(path, document.baseURI).href;
+    this.viewWait = true;
+    import(at('motion/film.js')).then((m) => {
+      this.viewWait = false;
+      // The page may have changed while the file was on its way: start whichever view is there now.
+      const el = this.viewEl;
+      if (this.gone || this.view || !el || !this.filmWanted()) return;
+      this.view = m.mountView({ root: el, three: at('vendor/three.module.min.js'), name: el.getAttribute('data-view') });
+    }).catch(() => { this.viewWait = false; });
+  }
+
+  stopView() {
+    if (this.view) this.view.destroy();
+    this.view = null;
+  }
+
   // The page background rests while the film is on screen, and picks up again after it.
   holdField(on, instant) {
     if (!!this.fieldHeld === on) return;
@@ -917,6 +964,7 @@ class Component extends DCLogic {
 
   applyMotion() {
     this.syncFilm();
+    this.syncView();
     document.querySelectorAll('[data-anim]').forEach((el) => { el.removeAttribute('data-anim'); el.style.removeProperty('--ns-d'); });
     this.untilt();
     this.syncRing();
@@ -1533,7 +1581,7 @@ class Component extends DCLogic {
     return {
       mainRef: this.mainRef, progressRef: this.progressRef, scanRef: this.scanRef, starRef: this.starRef,
       cursorRef: this.cursorRef, typedRef: this.typedRef, bgRef: this.bgRef, formRef: this.formRef,
-      copyRef: this.copyRef, filmRef: this.filmRef,
+      copyRef: this.copyRef, filmRef: this.filmRef, viewRef: this.viewRef,
       brand,
       builderName: this.props.builderName ?? 'Jasper Bitoon',
       tagline: this.props.tagline ?? 'Custom software for the problems you work around',
@@ -1545,6 +1593,7 @@ class Component extends DCLogic {
       filmAttr: this.filmWanted() ? 'on' : 'off',
       filmOn: this.filmWanted(), filmOff: !this.filmWanted(),
       filmNotes: TYPED_LINES.map((text) => ({ text })),
+      viewGo: sent ? '1' : '0',
       isHome: page === 'home', isSolutions: page === 'solutions', isWork: page === 'work',
       isAbout: page === 'about', isStart: page === 'start',
       curSolutions: cur('solutions'), curWork: cur('work'), curAbout: cur('about'), curStart: cur('start'),

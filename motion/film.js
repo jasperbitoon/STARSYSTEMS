@@ -504,11 +504,11 @@ function buildScene(THREE, canvas, noteCount) {
   })();
 
   // The orbits, as hair-thin bands of light lying in each ring's plane.
-  const ringMat = keep(new THREE.MeshBasicMaterial({ color: new THREE.Color(.55, .5, 1.1), transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false }));
+  const ringMats = RINGS.map(() => keep(new THREE.MeshBasicMaterial({ color: new THREE.Color(.55, .5, 1.1), transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false })));
   RINGS.forEach((r, ri) => {
     const geo = keep(new THREE.RingGeometry(r.r - .006, r.r + .006, 220, 1));
     geo.rotateX(-Math.PI / 2);
-    const m = new THREE.Mesh(geo, ringMat);
+    const m = new THREE.Mesh(geo, ringMats[ri]);
     m.quaternion.copy(ringQ[ri]);
     scene.add(m);
   });
@@ -545,7 +545,7 @@ function buildScene(THREE, canvas, noteCount) {
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), QF = new THREE.Quaternion(), QR = new THREE.Quaternion();
   const YPI = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
   const ID = new THREE.Quaternion(), SC = new THREE.Vector3(), UP = new THREE.Vector3(), ZERO = new THREE.Vector3(), LM = new THREE.Matrix4();
-  const RIGHT = new THREE.Vector3(), CUP = new THREE.Vector3();
+  const RIGHT = new THREE.Vector3(), CUP = new THREE.Vector3(), AT = new THREE.Vector3();
   const cam = [0, 0, 0], proj = new THREE.Vector3();
   let W = 1, H = 1, PXW = 1, PXH = 1;
 
@@ -560,24 +560,27 @@ function buildScene(THREE, canvas, noteCount) {
   }
 
   // s: { p, time, intro (0..1, the opening), px, py (pointer, -1..1), yaw (drag), dof (0..1) }
+  // and, for the smaller views on the other pages, view: { pos, at, off, range, rings }: where the
+  // camera stands, what it looks at, and how much of each ring has arrived.
   function update(s) {
-    const p = s.p, time = s.time;
+    const p = s.p, time = s.time, v = s.view;
     const ig = smooth(T.ignite[0], T.ignite[1], p);
     const gather = clamp((p - T.gather[0]) / (T.gather[1] + T.gather[2] - T.gather[0]));
     const settle = smooth(T.gather[1], .82, p);
     const wide = smooth(.44, .62, p);
 
-    camAt(p, cam);
-    camera.position.set(cam[0], cam[1], cam[2]);
-    camera.lookAt(0, 0, 0);
+    if (v) { camera.position.set(v.pos[0], v.pos[1], v.pos[2]); AT.set(v.at[0], v.at[1], v.at[2]); }
+    else { camAt(p, cam); camera.position.set(cam[0], cam[1], cam[2]); AT.set(0, 0, 0); }
+    camera.lookAt(AT);
     // The pointer leans the view a little, like tilting your head.
     camera.updateMatrix();
     RIGHT.setFromMatrixColumn(camera.matrix, 0); CUP.setFromMatrixColumn(camera.matrix, 1);
     camera.position.addScaledVector(RIGHT, s.px * .5).addScaledVector(CUP, s.py * -.32);
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(AT);
     // In the opening the star sits well right of centre, leaving the left for the headline;
     // once the headline has gone the system moves in toward the middle.
-    camera.setViewOffset(W, H, -W * lerp(.24, .15, wide), H * lerp(.01, .03, wide), W, H);
+    if (v) camera.setViewOffset(W, H, -W * v.off[0], H * v.off[1], W, H);
+    else camera.setViewOffset(W, H, -W * lerp(.24, .15, wide), H * lerp(.01, .03, wide), W, H);
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
 
@@ -591,7 +594,7 @@ function buildScene(THREE, canvas, noteCount) {
       if (m.userData.lift) m.envMapIntensity = scene.environmentIntensity * .3;
     }
     edgeMat.emissiveIntensity = lerp(.3, .55, ig);
-    ringMat.opacity = smooth(.6, .84, p) * .5;
+    ringMats.forEach((m, i) => { m.opacity = smooth(.6, .84, p) * .5 * (v && v.rings ? v.rings[i] : 1); });
     sky.uniforms.uLift.value = ig * .6;
     dust.uniforms.uTime.value = time; dust.uniforms.uGather.value = gather; dust.uniforms.uIgnite.value = ig;
     dust.uniforms.uSettle.value = settle; dust.uniforms.uYaw.value = s.yaw;
@@ -641,7 +644,7 @@ function buildScene(THREE, canvas, noteCount) {
       }
       if (t.flip) QF.multiply(YPI);
       Q.copy(t.q).slerp(QF, face);
-      SC.setScalar(lerp(t.scale, .6, e) * lerp(.55, 1, born));
+      SC.setScalar(lerp(t.scale, .6, e) * lerp(.55, 1, born) * (v && v.rings ? v.rings[t.ri] : 1));
       M.compose(t.pos, Q, SC);
       t.mesh.setMatrixAt(t.slot, M);
     }
@@ -652,8 +655,8 @@ function buildScene(THREE, canvas, noteCount) {
     // opening starts soft and pulls sharp.
     const camDist = camera.position.length();
     const u = lens.uniforms;
-    u.uFocus.value = lerp(camDist - 4.3, camDist, smooth(.2, .45, p)) + (1 - s.intro) * 9;
-    u.uRange.value = lerp(2.6, 7, smooth(.38, .7, p));
+    u.uFocus.value = (v ? camera.position.distanceTo(AT) : lerp(camDist - 4.3, camDist, smooth(.2, .45, p))) + (1 - s.intro) * 9;
+    u.uRange.value = v ? v.range : lerp(2.6, 7, smooth(.38, .7, p));
     u.uDof.value = s.dof;
     u.uGlow.value = lerp(.12, .24, ig);
     u.uVignette.value = .62;
@@ -726,6 +729,24 @@ function makeSound() {
 
 // ---- The page side: scroll, words, pointer, quality ---------------------------------------------
 
+// The 3D library is fetched in the browser's idle time, after the page itself is up, and the scene
+// is fully prepared before its first frame is shown, so the picture never stutters in.
+function prepare(three, canvas, noteCount, fit, alive, done) {
+  const idle = window.requestIdleCallback ? (fn) => requestIdleCallback(fn, { timeout: 2500 }) : (fn) => setTimeout(fn, 400);
+  // Two frames first: the words are on screen before any of the 3D work starts.
+  requestAnimationFrame(() => requestAnimationFrame(() => idle(() => {
+    if (!alive()) return;
+    import(three).then((THREE) => {
+      if (!alive()) return;
+      const s = buildScene(THREE, canvas, noteCount);
+      fit(s);
+      const ready = () => { if (!alive()) { s.dispose(); return; } done(s); };
+      if (s.renderer.extensions.has('KHR_parallel_shader_compile')) s.renderer.compileAsync(s.scene, s.camera).then(ready, ready);
+      else { s.renderer.compile(s.scene, s.camera); ready(); }
+    }).catch(() => { /* The words stay; nothing else depends on the 3D. */ });
+  })));
+}
+
 // How many pixels to draw, best first. A machine that cannot hold one moves down the list.
 const BUDGETS = [8.3e6, 5.2e6, 3.4e6, 2.2e6, 1.4e6];
 
@@ -766,25 +787,10 @@ export function mount({ root, three, onActive }) {
     pinW = w;
   }
 
-  // The 3D library is fetched in the browser's idle time, after the page itself is up.
   function load() {
     if (loading || scene || gone) return;
     loading = true;
-    const idle = window.requestIdleCallback ? (fn) => requestIdleCallback(fn, { timeout: 2500 }) : (fn) => setTimeout(fn, 400);
-    // Two frames first: the headline is on screen before any of the 3D work starts.
-    requestAnimationFrame(() => requestAnimationFrame(() => idle(() => {
-      if (gone) return;
-      import(three).then((THREE) => {
-        if (gone) return;
-        const s = buildScene(THREE, canvas, notes.length);
-        // Everything is prepared before the first frame is shown, so the picture never stutters in.
-        const w = pin.clientWidth, h = pin.clientHeight;
-        s.resize(w, h, ratioFor(w, h));
-        const ready = () => { if (gone) { s.dispose(); return; } scene = s; size(); };
-        if (s.renderer.extensions.has('KHR_parallel_shader_compile')) s.renderer.compileAsync(s.scene, s.camera).then(ready, ready);
-        else { s.renderer.compile(s.scene, s.camera); ready(); }
-      }).catch(() => { /* The words stay; nothing else depends on the 3D. */ });
-    })));
+    prepare(three, canvas, notes.length, (s) => { const w = pin.clientWidth, h = pin.clientHeight; s.resize(w, h, ratioFor(w, h)); }, () => !gone, (s) => { scene = s; size(); });
   }
 
   function words(pp) {
@@ -931,6 +937,100 @@ export function mount({ root, three, onActive }) {
       root.removeAttribute('data-film-live'); root.removeAttribute('data-film-frozen');
       touched.forEach((el) => { ['opacity', 'transform', 'visibility', 'color', 'cursor'].forEach((k) => { el.style[k] = ''; delete el['__' + k]; }); });
       ticks.forEach((el) => { el.removeAttribute('data-on'); delete el.__on; });
+    },
+  };
+}
+
+// ---- The other pages: the same system, seen from somewhere else ---------------------------------
+//
+// Each page gets one small view. It goes from shot a to shot b either as the page scrolls or,
+// with go, when the page says so (the Start page, once the form has gone). p is the film's own
+// playhead: 0 is loose cards, 1 is the finished system.
+
+const VIEWS = {
+  solutions: { a: { p: 1, pos: [0, 6.2, 15], at: [0, -.4, 0] }, b: { p: 1, pos: [0, 12.2, 10.6], at: [0, -.4, 0] }, range: 8, rings: true },
+  work: { a: { p: .02, pos: [-2.5, -1.2, 7.2], at: [-1.1, -1.5, 3.4] }, b: { p: .02, pos: [.5, -1.1, 7.1], at: [-1.1, -1.5, 3.4] }, range: 1.7 },
+  about: { a: { p: 1, pos: [0, 1.5, 9.4], at: [0, .15, 0] }, b: { p: 1, pos: [0, 3.4, 9.2], at: [0, .15, 0] }, range: 4.2 },
+  start: { a: { p: .03, pos: [.5, .15, 12.6], at: [.5, .15, 4] }, b: { p: 1, pos: [0, 5.6, 13.6], at: [0, -.4, 0] }, range: 6, go: true, tau: 950 },
+};
+
+export function mountView({ root, three, name }) {
+  const V = VIEWS[name];
+  if (!V) return { destroy() {} };
+  const canvas = document.createElement('canvas');
+  root.appendChild(canvas);
+  let gone = false, raf = 0, last = 0, scene = null, loading = false, liveAt = -1, k = -1, dof = 1, slow = 0, frames = 0;
+  let px = 0, py = 0, tx = 0, ty = 0;
+  const t0 = performance.now();
+  const shot = { pos: [0, 0, 0], at: [0, 0, 0], off: [0, 0], range: V.range, rings: V.rings ? [0, 0, 0] : null };
+  const fit = (s) => { const w = root.clientWidth, h = root.clientHeight; if (w && h) s.resize(w, h, Math.min(window.devicePixelRatio || 1, 2)); };
+
+  function frame(ts) {
+    raf = requestAnimationFrame(frame);
+    const real = ts - (last || ts);
+    last = ts;
+    if (!scene) return;
+    const snap = !!window.__nsFilmSnap;
+    const clock = window.__nsFilmClock === undefined ? (ts - t0) / 1000 : window.__nsFilmClock;
+    if (liveAt < 0) { liveAt = snap ? -10 : clock; root.setAttribute('data-view-live', ''); }
+    const age = clock - liveAt;
+    // How far along: by scroll, until the view has left the top of the screen, or on the page's word.
+    const r = root.getBoundingClientRect();
+    const target = V.go ? (root.getAttribute('data-view-go') === '1' ? 1 : 0) : clamp(window.scrollY / Math.max(1, r.top + window.scrollY + r.height));
+    if (k < 0 || snap) k = target;
+    else {
+      k += (target - k) * (1 - Math.exp(-Math.min(real, 600) / (V.tau || 120)));
+      if (Math.abs(target - k) < .0004) k = target;
+    }
+    const e = V.go ? easeIO(k) : k;
+    for (let i = 0; i < 3; i++) { shot.pos[i] = lerp(V.a.pos[i], V.b.pos[i], e); shot.at[i] = lerp(V.a.at[i], V.b.at[i], e); }
+    // On the Solutions page the three orbits arrive one after another, inner first.
+    if (shot.rings) for (let i = 0; i < 3; i++) shot.rings[i] = easeOut((age - .3 - i * .55) / 1.1);
+    const lean = 1 - Math.exp(-Math.min(real, 64) / 260);
+    px += (tx - px) * lean; py += (ty - py) * lean;
+    scene.update({ p: lerp(V.a.p, V.b.p, e), time: clock, intro: clamp(age / 1.9), px: snap ? 0 : px * .6, py: snap ? 0 : py * .6, yaw: 0, dof, view: shot });
+
+    // A machine that cannot keep up loses the soft focus first, then the view itself.
+    if (window.__nsFilmNoGuard) return;
+    frames++;
+    if (frames < 30) return;
+    if (real > 24) slow++;
+    if (frames % 90 === 0) {
+      if (slow > 40) { if (dof) dof = 0; else { halt(); return; } }
+      slow = 0;
+    }
+  }
+
+  function halt() {
+    if (raf) cancelAnimationFrame(raf);
+    raf = 0; gone = true;
+    if (scene) { scene.dispose(); scene = null; }
+    root.removeAttribute('data-view-live');
+  }
+
+  const onMove = (e) => { tx = clamp((e.clientX / window.innerWidth) * 2 - 1, -1, 1); ty = clamp((e.clientY / window.innerHeight) * 2 - 1, -1, 1); };
+  window.addEventListener('pointermove', onMove, { passive: true });
+
+  // Nothing is fetched or drawn until the view is on screen; a hidden view never is.
+  const io = new IntersectionObserver((entries) => {
+    if (gone) return;
+    if (entries.some((en) => en.isIntersecting)) {
+      if (!loading) { loading = true; prepare(three, canvas, 5, fit, () => !gone, (s) => { scene = s; fit(s); }); }
+      if (!raf) { last = 0; raf = requestAnimationFrame(frame); }
+    } else if (raf) { cancelAnimationFrame(raf); raf = 0; }
+  }, { rootMargin: '10% 0px' });
+  io.observe(root);
+  const ro = new ResizeObserver(() => { if (scene) fit(scene); });
+  ro.observe(root);
+
+  if (window.__nsFilmDebug) window.__nsView = { get scene() { return scene; }, get k() { return k; }, name, canvas };
+
+  return {
+    destroy() {
+      io.disconnect(); ro.disconnect();
+      window.removeEventListener('pointermove', onMove);
+      halt();
+      canvas.remove();
     },
   };
 }
