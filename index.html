@@ -138,6 +138,45 @@
     :is([data-nav-mark], [data-tilt], .btn) { transition: none !important; }
     .btn:active { transform: none; }
   }
+  /* The Home film. data-film="off" is the plain layout with a still picture: reduced motion, small
+     screens, no WebGL. data-film="on" is the scroll-driven one: a tall section whose picture stays
+     pinned while motion/film.js plays it from the scroll position. */
+  .ns-film { position: relative; }
+  .ns-film-pin { position: relative; max-width: 1160px; margin: 0 auto; padding: 72px 24px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 32px clamp(32px, 6vw, 88px); align-items: center; }
+  .ns-film-canvas { display: none; }
+  .ns-film-still { grid-column: 2; grid-row: 1; width: 100%; height: auto; display: block; }
+  .ns-film-caps { grid-column: 1; grid-row: 1; display: grid; gap: 24px; }
+  .ns-film-line { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(21px, 2.2vw, 28px); line-height: 1.22; letter-spacing: -.012em; margin: 0; max-width: 26ch; }
+  .ns-film-notes { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 6px; font-size: 14.5px; line-height: 1.4; color: color-mix(in srgb, var(--color-text) 72%, transparent); }
+  .ns-film-notes li::before { content: '\203A'; color: var(--color-accent); margin-right: 9px; }
+  .ns-film-cap .btn { margin-top: 24px; }
+  @media (max-width: 860px) {
+    .ns-film-pin { grid-template-columns: minmax(0, 1fr); padding: 56px 24px; }
+    .ns-film-still, .ns-film-caps { grid-column: 1; grid-row: auto; }
+  }
+  [data-film="on"].ns-film { height: 420vh; }
+  [data-film="on"] .ns-film-pin { position: sticky; top: 0; height: 100vh; max-width: none; padding: 0; display: block; overflow: hidden; }
+  [data-film="on"] .ns-film-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .7s ease; }
+  [data-film="on"] .ns-film-still { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scale(.8); transform-origin: 90% 40%; transition: opacity .7s ease; }
+  [data-film="on"][data-film-live] .ns-film-canvas { opacity: 1; }
+  [data-film="on"][data-film-live] .ns-film-still { opacity: 0; }
+  [data-film="on"] .ns-film-caps { position: absolute; inset: 0; display: block; pointer-events: none; background: radial-gradient(ellipse 62% 78% at 0% 100%, color-mix(in srgb, var(--color-bg) 94%, transparent) 0%, color-mix(in srgb, var(--color-bg) 70%, transparent) 45%, transparent 100%); }
+  [data-film="on"] .ns-film-cap { position: absolute; left: max(24px, calc((100% - 1160px) / 2 + 24px)); bottom: 12vh; width: min(500px, 38vw); opacity: 0; }
+  [data-film="on"] .ns-film-cap:first-child { opacity: 1; }
+  [data-film="on"] .ns-film-line { font-size: clamp(26px, 2.6vw, 38px); line-height: 1.12; letter-spacing: -.018em; max-width: none; text-wrap: balance; text-shadow: 0 1px 18px var(--color-bg); }
+  [data-film="on"] .ns-film-notes { display: block; margin: 0; font-size: 14px; letter-spacing: .01em; color: color-mix(in srgb, var(--color-text) 88%, transparent); }
+  [data-film="on"] .ns-film-notes li { position: absolute; left: 0; top: 0; white-space: nowrap; opacity: 0; will-change: transform, opacity; text-shadow: 0 1px 12px var(--color-bg); }
+  [data-film="on"] .ns-film-cap .btn { pointer-events: auto; visibility: hidden; }
+  /* While the film is on screen it is the only thing moving: the page background rests. */
+  html[data-film-hold] [style*="ns-drift"] { animation-play-state: paused; }
+  @media print {
+    .ns-film { height: auto !important; }
+    .ns-film-pin { position: static !important; height: auto !important; }
+    .ns-film-canvas, .ns-film-still { display: none !important; }
+    .ns-film-caps, .ns-film-cap { position: static !important; opacity: 1 !important; background: none !important; }
+    .ns-film-cap { width: auto !important; margin-bottom: 16px; }
+    .ns-film-notes li { position: static !important; transform: none !important; opacity: 1 !important; }
+  }
   @media print {
     [data-reveal][data-hide] { opacity: 1 !important; }
     [data-reveal], [data-reveal] > *, .ns-w { animation: none !important; }
@@ -155,7 +194,7 @@
   <div aria-hidden="true" style="position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden">
     <div style="position: absolute; width: 760px; height: 760px; left: -180px; top: -280px; border-radius: 50%; filter: blur(80px); opacity: .55; background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-800) 90%, transparent), transparent 62%); animation: ns-drift-a 38s ease-in-out infinite"></div>
     <div style="position: absolute; width: 640px; height: 640px; right: -140px; top: 18%; border-radius: 50%; filter: blur(90px); opacity: .38; background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-2-800) 80%, transparent), transparent 60%); animation: ns-drift-b 47s ease-in-out infinite"></div>
-    <canvas ref="{{ bgRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block"></canvas>
+    <canvas ref="{{ bgRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: opacity .7s ease"></canvas>
   </div>
 
   <div aria-hidden="true" ref="{{ cursorRef }}" style="position: fixed; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--color-accent) 60%, transparent); background-color: transparent; pointer-events: none; opacity: 0; z-index: 60; transition: opacity .35s ease, width .25s cubic-bezier(.2,.7,.2,1), height .25s cubic-bezier(.2,.7,.2,1), margin .25s cubic-bezier(.2,.7,.2,1), background-color .25s ease"></div>
@@ -234,6 +273,33 @@
         <div data-reveal>
           <p style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(26px, 2.8vw, 36px); line-height: 1.15; margin: 0 0 12px">Senior only</p>
           <p style="font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 66%, transparent); margin: 0">You deal with the principal, not a PM</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="ns-film" data-film="{{ filmAttr }}" ref="{{ filmRef }}" aria-label="From workarounds to one system">
+      <div class="ns-film-pin" data-film-pin>
+        <canvas class="ns-film-canvas" aria-hidden="true"></canvas>
+        <img class="ns-film-still" src="motion/film-still.webp" alt="" width="1200" height="750" loading="lazy" decoding="async" />
+        <div class="ns-film-caps">
+          <div class="ns-film-cap" data-film-cap>
+            <p class="ns-film-line">Most engagements start as a sentence.</p>
+            <ul class="ns-film-notes">
+              <sc-for list="{{ filmNotes }}" as="n" hint-placeholder-count="5">
+                <li data-film-note>{{ n.text }}</li>
+              </sc-for>
+            </ul>
+          </div>
+          <div class="ns-film-cap" data-film-cap>
+            <p class="ns-film-line">I build the thing that ends it.</p>
+          </div>
+          <div class="ns-film-cap" data-film-cap>
+            <p class="ns-film-line">The spreadsheet, the inbox and the group chat, replaced by one system your staff can use.</p>
+          </div>
+          <div class="ns-film-cap" data-film-cap>
+            <p class="ns-film-line">The software a company organises itself around.</p>
+            <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary" data-film-cta>Start a project</a>
+          </div>
         </div>
       </div>
     </section>
@@ -545,7 +611,7 @@ const TYPED_LINES = [
 ];
 
 class Component extends DCLogic {
-  state = { page: this.routeFromHash() || 'home', sent: '', sentName: '', sentText: '', sentMailto: '', mailCut: false, copied: '', sending: false, sendFailed: false, errors: {}, still: this.storedStill(), settled: false };
+  state = { page: this.routeFromHash() || 'home', sent: '', sentName: '', sentText: '', sentMailto: '', mailCut: false, copied: '', sending: false, sendFailed: false, errors: {}, still: this.storedStill(), settled: false, filmFit: this.filmFits() };
   mq = matchMedia('(prefers-reduced-motion: reduce)');
   fine = matchMedia('(hover: hover) and (pointer: fine)');
   draft = this.loadDraft();
@@ -567,6 +633,14 @@ class Component extends DCLogic {
     if (this.fieldOn) this.stopField();
     this.canvas = el;
     this.startField();
+  };
+  // The Home film (motion/film.js). It is mounted only where filmWanted() says so; everywhere
+  // else the section shows its still picture and the same words.
+  filmRef = (el) => {
+    if (el === this.filmEl) return;
+    this.stopFilm();
+    this.filmEl = el;
+    this.syncFilm();
   };
   formRef = (el) => {
     if (this.formEl && this.formEl !== el) {
@@ -636,6 +710,8 @@ class Component extends DCLogic {
     window.addEventListener('hashchange', this.onHash);
     window.addEventListener('focusin', this.onFocusIn);
     if (this.mq.addEventListener) this.mq.addEventListener('change', this.onMotionPref);
+    this.onFilmFit = () => this.setState({ filmFit: this.filmFits() }, () => this.syncFilm());
+    if (this.filmMq && this.filmMq.addEventListener) this.filmMq.addEventListener('change', this.onFilmFit);
     // An anchor that is not one of the pages shows Home. Say so in the address, so Back from
     // another page has somewhere to return to.
     if (!this.routeFromHash()) { try { history.replaceState(history.state, '', '#/'); } catch (e) {} }
@@ -655,6 +731,8 @@ class Component extends DCLogic {
     window.removeEventListener('hashchange', this.onHash);
     window.removeEventListener('focusin', this.onFocusIn);
     if (this.mq.removeEventListener) this.mq.removeEventListener('change', this.onMotionPref);
+    if (this.filmMq && this.filmMq.removeEventListener) this.filmMq.removeEventListener('change', this.onFilmFit);
+    this.stopFilm();
     this.formRef(null);
   }
 
@@ -746,6 +824,51 @@ class Component extends DCLogic {
 
   reduced() { return !!this.state.still || this.props.bgMode === 'still' || this.mq.matches; }
 
+  // A laptop-sized window that can draw 3D. Phones and small windows keep the still picture.
+  filmFits() {
+    if (!this.filmMq) this.filmMq = matchMedia('(min-width: 900px) and (min-height: 540px)');
+    if (!this.filmMq.matches) return false;
+    if (this.gl === undefined) {
+      try {
+        const c = document.createElement('canvas');
+        this.gl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
+      } catch (e) { this.gl = false; }
+    }
+    return this.gl;
+  }
+
+  filmWanted() { return !!this.state.filmFit && !this.reduced() && this.props.motion !== 'none'; }
+
+  syncFilm() {
+    if (!this.filmEl || !this.filmWanted()) { this.stopFilm(); return; }
+    if (this.film || this.filmWait) return;
+    const el = this.filmEl;
+    const at = (path) => new URL(path, document.baseURI).href;
+    this.filmWait = true;
+    import(at('motion/film.js')).then((m) => {
+      this.filmWait = false;
+      if (this.gone || el !== this.filmEl || !this.filmWanted()) return;
+      this.film = m.mount({ root: el, three: at('vendor/three.module.min.js'), onActive: (on) => this.holdField(on) });
+    }).catch(() => { this.filmWait = false; this.gl = false; this.setState({ filmFit: false }); });
+  }
+
+  stopFilm() {
+    if (this.film) this.film.destroy();
+    this.film = null;
+    this.holdField(false);
+  }
+
+  // The page background rests while the film is on screen, and picks up again after it.
+  holdField(on) {
+    if (!!this.fieldHeld === on) return;
+    this.fieldHeld = on;
+    document.documentElement.toggleAttribute('data-film-hold', on);
+    if (this.canvas) this.canvas.style.opacity = on ? '0' : '';
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = null; this.lastTs = 0;
+    if (!on && this.fieldOn && !this.reduced()) this.runLoop();
+  }
+
   storedStill() {
     try { return localStorage.getItem('ns-still') === '1'; } catch (e) { return false; }
   }
@@ -757,6 +880,7 @@ class Component extends DCLogic {
   };
 
   applyMotion() {
+    this.syncFilm();
     document.querySelectorAll('[data-anim]').forEach((el) => { el.removeAttribute('data-anim'); el.style.removeProperty('--ns-d'); });
     this.untilt();
     this.syncRing();
@@ -765,7 +889,7 @@ class Component extends DCLogic {
     this.raf = null; this.lastTs = 0; this.par = undefined;
     if (!this.fieldOn) return;
     if (this.reduced()) { this.pulses = []; this.rings = []; this.frame(0); }
-    else this.runLoop();
+    else if (!this.fieldHeld) this.runLoop();
   }
 
   syncRing() {
@@ -903,7 +1027,7 @@ class Component extends DCLogic {
     document.documentElement.addEventListener('pointerleave', this.onLeave);
     this.onResize();
 
-    if (!this.reduced()) this.runLoop();
+    if (!this.reduced() && !this.fieldHeld) this.runLoop();
   }
 
   runLoop() {
@@ -1373,7 +1497,7 @@ class Component extends DCLogic {
     return {
       mainRef: this.mainRef, progressRef: this.progressRef, scanRef: this.scanRef, starRef: this.starRef,
       cursorRef: this.cursorRef, typedRef: this.typedRef, bgRef: this.bgRef, formRef: this.formRef,
-      copyRef: this.copyRef,
+      copyRef: this.copyRef, filmRef: this.filmRef,
       brand,
       builderName: this.props.builderName ?? 'Jasper Bitoon',
       tagline: this.props.tagline ?? 'Custom software for the problems you work around',
@@ -1382,6 +1506,8 @@ class Component extends DCLogic {
       availability: this.props.availability ?? 'Taking on new projects',
       year: new Date().getFullYear(),
       typedAll: TYPED_LINES.join('. ') + '.',
+      filmAttr: this.filmWanted() ? 'on' : 'off',
+      filmNotes: TYPED_LINES.map((text) => ({ text })),
       isHome: page === 'home', isSolutions: page === 'solutions', isWork: page === 'work',
       isAbout: page === 'about', isStart: page === 'start',
       curSolutions: cur('solutions'), curWork: cur('work'), curAbout: cur('about'), curStart: cur('start'),

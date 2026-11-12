@@ -24,7 +24,8 @@ command is not found.
 | `index.html` | The whole site: styles in the head, the five pages inside the `x-dc` block, behaviour in the script block at the bottom |
 | `support.js` | The runtime that renders `index.html`, included unmodified from the design tool the site was drawn in |
 | `_ds/` | Nocturne design system from the same tool: colour, type and component styles |
-| `vendor/` | React and ReactDOM 18.3.1, served locally |
+| `vendor/` | React and ReactDOM 18.3.1, and three.js r170 (the 3D library the Home film uses), served locally |
+| `motion/` | The Home film: `film.js` draws and plays it, `film-still.webp` is the picture shown where it does not play |
 | `fonts/` | Inter, Latin subset, with its licence |
 | `404.html` | Not-found page for GitHub Pages |
 | `.nojekyll` | Tells GitHub Pages to serve `_ds/` as-is |
@@ -48,6 +49,15 @@ command is not found.
   it in a column at a time), and
   `data-tilt` leans a card or row toward the pointer. The Pause motion control in the footer
   and the visitor's reduced-motion setting switch all of it off.
+- **The Home film** is the section between the four facts and "What I build". Its words are
+  ordinary text in the template inside `index.html` (search for `ns-film`); the five short
+  sentences on the tiles are the same `TYPED_LINES` the hero types out. The 3D itself is
+  `motion/film.js`: the scroll positions of each scene, the camera stops and the ring sizes are
+  the constants at the top of that file. It plays only in a window at least 900 by 540 pixels
+  with motion allowed. Phones, small windows, Pause motion and the visitor's reduced-motion
+  setting get `motion/film-still.webp` and the same words instead, and never download the 3D
+  library. A machine that cannot keep up is switched to the still picture as well. If the look
+  of the last scene changes, make the still picture again from it.
 - **Each page has its own address**: `#/solutions`, `#/work`, `#/about`, `#/start`.
 - **The enquiry form** posts through [Web3Forms](https://web3forms.com). Search
   `index.html` for `FORM_KEY` and paste your access key between the quotes. While that is
