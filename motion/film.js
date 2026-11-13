@@ -765,7 +765,9 @@ export function mount({ root, three, onActive }) {
   // active starts unknown, so the page is always told once whether the film is on screen.
   let gone = false, raf = 0, last = 0, p = -1, near = false, active = null;
   let scene = null, loading = false, live = false, frozen = false, liveAt = 0;
-  let tier = window.__nsFilmTier === undefined ? 1 : window.__nsFilmTier, dof = 1, slow = 0, frames = 0, good = 0, lockUp = false, warm = 0, wn = 0, wt = 0;
+  // A machine with eight or more processor cores starts on the sharpest picture straight away;
+  // anything else starts one step down and moves up once it has shown it can hold it.
+  let tier = window.__nsFilmTier !== undefined ? window.__nsFilmTier : (navigator.hardwareConcurrency || 4) >= 8 ? 0 : 1, dof = 1, slow = 0, frames = 0, good = 0, lockUp = false, warm = 0, wn = 0, wt = 0;
   let px = 0, py = 0, tx = 0, ty = 0, yaw = 0, yawV = 0, drag = null;
   const out = [0, 0, 0];
   let pinW = 0;
