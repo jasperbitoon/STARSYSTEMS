@@ -138,6 +138,84 @@
     :is([data-nav-mark], [data-tilt], .btn) { transition: none !important; }
     .btn:active { transform: none; }
   }
+  /* The Home hero is also the Home film. data-film="off" is the plain hero with a still picture
+     under it: phones, small windows, reduced motion, no WebGL. data-film="on" is the scroll-driven
+     one: a tall section whose picture stays pinned while motion/film.js plays it from the scroll
+     position, with the same headline, paragraph and buttons laid over it. */
+  .ns-film { position: relative; overflow: clip; border-bottom: 1px solid var(--color-divider); }
+  .ns-film-pin { position: relative; }
+  .ns-film-canvas, .ns-film-rail, .ns-film-cue, .ns-film-ctas { display: none; }
+  .ns-film-sweep { position: absolute; inset: 0; pointer-events: none; }
+  .ns-hero { max-width: 1160px; margin: 0 auto; padding: 104px 24px 88px; position: relative; }
+  .ns-hero-h1 { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(42px, 6.1vw, 82px); line-height: 1.05; letter-spacing: -.02em; margin: 0 0 32px; margin-left: -.06em; max-width: 21ch; }
+  .ns-hero-answer { display: block; color: color-mix(in srgb, var(--color-text) 52%, transparent); }
+  .ns-film-more { max-width: 1160px; margin: 0 auto; padding: 0 24px 80px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 32px clamp(32px, 6vw, 88px); align-items: center; position: relative; }
+  .ns-film-caps { display: grid; gap: 24px; }
+  .ns-film-line { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(21px, 2.2vw, 28px); line-height: 1.22; letter-spacing: -.012em; margin: 0; max-width: 26ch; }
+  .ns-film-still { width: 100%; height: auto; display: block; -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%); mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%); }
+  @media (max-width: 860px) {
+    .ns-film-more { grid-template-columns: minmax(0, 1fr); padding-bottom: 56px; }
+  }
+
+  [data-film="on"].ns-film { height: 470vh; border-bottom: 0; }
+  [data-film="on"] .ns-film-pin { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  [data-film="on"] .ns-film-sweep { display: none; }
+  [data-film="on"] .ns-film-canvas { display: block; position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity 1.2s ease; -webkit-mask-image: linear-gradient(to bottom, #000 90%, transparent 100%); mask-image: linear-gradient(to bottom, #000 90%, transparent 100%); }
+  [data-film="on"][data-film-live] .ns-film-canvas { opacity: 1; }
+  .ns-film-canvas canvas { display: block; width: 100%; height: 100%; }
+  [data-film="on"] .ns-hero { position: absolute; inset: 0; z-index: 2; padding: 47px 24px 0; display: flex; flex-direction: column; justify-content: center; pointer-events: none; }
+  [data-film="on"] .ns-hero a { pointer-events: auto; }
+  [data-film="on"] .ns-hero-rules { display: none; }
+  [data-film="on"] .ns-hero-h1 { font-size: clamp(36px, 4vw, 60px); max-width: none; margin-bottom: 28px; text-shadow: 0 2px 30px color-mix(in srgb, var(--color-bg) 70%, transparent); }
+  [data-film="on"] .ns-hero-h1 [data-film-problem] { white-space: nowrap; }
+  [data-film="on"] .ns-hero-answer { max-width: 9.6em; text-wrap: balance; }
+  [data-film="on"] .ns-hero-rest { max-width: 500px; }
+  [data-film="on"] .ns-film-notes { position: absolute; inset: 0; z-index: 2; list-style: none; margin: 0; padding: 0; pointer-events: none; font-size: 14.5px; letter-spacing: .005em; color: color-mix(in srgb, var(--color-text) 92%, transparent); }
+  [data-film="on"] .ns-film-notes li { position: absolute; left: 0; top: 0; white-space: nowrap; opacity: 0; will-change: transform, opacity; text-shadow: 0 1px 14px var(--color-bg), 0 0 3px var(--color-bg); }
+  [data-film="on"] .ns-film-notes li::before { content: '\203A'; color: var(--color-accent); margin-right: 8px; }
+  [data-film="on"] .ns-film-more { position: absolute; inset: 0; z-index: 1; max-width: none; padding: 0; display: block; pointer-events: none; }
+  [data-film="on"] .ns-film-caps { position: absolute; inset: 0; display: block; background: radial-gradient(ellipse 58% 70% at 0% 100%, color-mix(in srgb, var(--color-bg) 88%, transparent) 0%, color-mix(in srgb, var(--color-bg) 55%, transparent) 50%, transparent 100%); }
+  [data-film="on"] .ns-film-cap { position: absolute; left: max(24px, calc((100% - 1160px) / 2 + 24px)); bottom: 13vh; width: min(520px, 40vw); opacity: 0; will-change: transform, opacity; }
+  [data-film="on"] .ns-film-line { font-size: clamp(27px, 2.75vw, 42px); line-height: 1.1; letter-spacing: -.018em; max-width: none; text-wrap: balance; text-shadow: 0 1px 18px var(--color-bg); }
+  [data-film="on"] .ns-film-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; pointer-events: auto; visibility: hidden; }
+  [data-film="on"] .ns-film-still { display: none; }
+  [data-film="on"][data-film-frozen] .ns-film-still { display: block; position: absolute; right: 3vw; top: 50%; width: 60vw; transform: translateY(-50%); }
+  [data-film="on"] .ns-film-rail { display: flex; flex-direction: column; gap: 9px; position: absolute; z-index: 3; left: 30px; top: 50%; transform: translateY(-50%); }
+  [data-film="on"] .ns-film-rail span { width: 2px; height: 20px; border-radius: 1px; background: color-mix(in srgb, var(--color-text) 20%, transparent); transition: background-color .5s ease, height .5s cubic-bezier(.2,.7,.2,1); }
+  [data-film="on"] .ns-film-rail span[data-on="true"] { height: 34px; background: var(--color-accent); }
+  @keyframes ns-cue { 0% { transform: translateY(-100%); } 60%, 100% { transform: translateY(100%); } }
+  [data-film="on"] .ns-film-cue { display: block; position: absolute; z-index: 3; left: 50%; bottom: 26px; width: 1px; height: 46px; overflow: hidden; background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+  [data-film="on"] .ns-film-cue::after { content: ''; position: absolute; inset: 0; background: var(--color-accent); animation: ns-cue 2.4s cubic-bezier(.6,0,.3,1) infinite; }
+  .ns-film-sound { position: absolute; z-index: 3; right: 22px; bottom: 20px; padding: 8px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 11.5px; letter-spacing: .09em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 58%, transparent); }
+  .ns-film-sound:hover, .ns-film-sound[aria-pressed="true"] { color: var(--color-text); }
+  .ns-film-sound[aria-pressed="true"] [data-s="off"], .ns-film-sound[aria-pressed="false"] [data-s="on"] { display: none; }
+  /* While the film is on screen it is the only thing moving: the page background rests. */
+  html[data-film-hold] [style*="ns-drift"] { animation-play-state: paused; }
+  /* The other pages: one small view of the same 3D system each (motion/film.js, mountView).
+     It sits behind the page's words and is only there where the Home film plays. */
+  .ns-page { position: relative; z-index: 0; }
+  .ns-view { display: none; }
+  @media (min-width: 900px) {
+    .ns-view[data-view-on="on"] { display: block; position: absolute; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 1.4s ease; -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 48%, transparent 100%); mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 48%, transparent 100%); }
+    .ns-view[data-view-live] { opacity: 1; }
+    .ns-view canvas { display: block; width: 100%; height: 100%; }
+    /* --ns-out: how far a view may reach past the text column without leaving the window. */
+    .ns-view { --ns-out: max(0px, (100vw - 1160px) / 2 - 16px); }
+    .ns-view[data-view="solutions"] { right: calc(-1 * min(150px, var(--ns-out))); top: 24px; width: min(600px, 40vw); aspect-ratio: 4 / 3; }
+    .ns-view[data-view="work"] { right: calc(-1 * min(90px, var(--ns-out))); top: 10px; width: min(560px, 40vw); aspect-ratio: 13 / 10; }
+    .ns-view[data-view="about"] { right: calc(-1 * min(40px, var(--ns-out))); top: 330px; width: min(520px, 40vw); aspect-ratio: 1; }
+    .ns-view[data-view="start"] { left: calc(-1 * min(60px, var(--ns-out))); top: 440px; width: min(540px, 42vw); aspect-ratio: 8 / 5; }
+    /* Once the form has gone its answers fill the left, so the view moves to the empty right. */
+    .ns-view[data-view="start"][data-view-go="1"] { left: auto; right: calc(-1 * min(40px, var(--ns-out))); top: 56px; width: min(600px, 44vw); aspect-ratio: 4 / 3; }
+  }
+  @media print {
+    .ns-view { display: none !important; }
+    .ns-film { height: auto !important; }
+    .ns-film-pin { position: static !important; height: auto !important; }
+    .ns-film-canvas, .ns-film-still, .ns-film-rail, .ns-film-cue, .ns-film-sound, .ns-film-notes { display: none !important; }
+    .ns-hero, .ns-film-more, .ns-film-caps, .ns-film-cap { position: static !important; opacity: 1 !important; background: none !important; transform: none !important; }
+    .ns-hero [data-film-rest], .ns-hero-h1, .ns-hero-h1 span { opacity: 1 !important; visibility: visible !important; }
+  }
   @media print {
     [data-reveal][data-hide] { opacity: 1 !important; }
     [data-reveal], [data-reveal] > *, .ns-w { animation: none !important; }
@@ -155,7 +233,7 @@
   <div aria-hidden="true" style="position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden">
     <div style="position: absolute; width: 760px; height: 760px; left: -180px; top: -280px; border-radius: 50%; filter: blur(80px); opacity: .55; background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-800) 90%, transparent), transparent 62%); animation: ns-drift-a 38s ease-in-out infinite"></div>
     <div style="position: absolute; width: 640px; height: 640px; right: -140px; top: 18%; border-radius: 50%; filter: blur(90px); opacity: .38; background: radial-gradient(circle, color-mix(in srgb, var(--color-accent-2-800) 80%, transparent), transparent 60%); animation: ns-drift-b 47s ease-in-out infinite"></div>
-    <canvas ref="{{ bgRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block"></canvas>
+    <canvas ref="{{ bgRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block; transition: opacity .7s ease"></canvas>
   </div>
 
   <div aria-hidden="true" ref="{{ cursorRef }}" style="position: fixed; left: 0; top: 0; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--color-accent) 60%, transparent); background-color: transparent; pointer-events: none; opacity: 0; z-index: 60; transition: opacity .35s ease, width .25s cubic-bezier(.2,.7,.2,1), height .25s cubic-bezier(.2,.7,.2,1), margin .25s cubic-bezier(.2,.7,.2,1), background-color .25s ease"></div>
@@ -181,37 +259,73 @@
 
   <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
   <div>
-    <section style="position: relative; overflow: hidden; border-bottom: 1px solid var(--color-divider)">
-      <div style="position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--color-accent) 12%, transparent) 50%, transparent 65%); animation: ns-sweep 9s ease-in-out 1.2s infinite"></div>
-      <div style="max-width: 1160px; margin: 0 auto; padding: 104px 24px 88px; position: relative">
-        <div style="display: flex; flex-direction: column; gap: 7px; width: min(360px, 60%); margin-bottom: 44px">
-          <span style="height: 1px; background: var(--color-accent); transform-origin: left; animation: ns-rule .9s cubic-bezier(.2,.7,.2,1) both"></span>
-          <span style="height: 1px; background: color-mix(in srgb, var(--color-accent) 55%, transparent); transform-origin: left; width: 72%; animation: ns-rule .9s cubic-bezier(.2,.7,.2,1) .12s both"></span>
-          <span style="height: 1px; background: color-mix(in srgb, var(--color-accent) 30%, transparent); transform-origin: left; width: 44%; animation: ns-rule .9s cubic-bezier(.2,.7,.2,1) .24s both"></span>
-        </div>
-        <h1 aria-label="Every company runs on a problem it works around. I build the thing that ends it." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(42px, 6.1vw, 82px); line-height: 1.05; letter-spacing: -.02em; margin: 0 0 32px; margin-left: -.06em; max-width: 21ch; --ns-gap: 42ms">
-          <span aria-hidden="true" style="display: block; --ns-at: .1s"><span class="ns-w">Every</span> <span class="ns-w">company</span> <span class="ns-w">runs</span> <span class="ns-w">on</span></span>
-          <span aria-hidden="true" style="display: block; --ns-at: .27s"><span class="ns-w">a</span> <span class="ns-w">problem</span> <span class="ns-w">it</span> <span class="ns-w">works</span> <span class="ns-w">around.</span></span>
-          <span aria-hidden="true" style="display: block; color: color-mix(in srgb, var(--color-text) 52%, transparent); --ns-at: .48s"><span class="ns-w">I</span> <span class="ns-w">build</span> <span class="ns-w">the</span> <span class="ns-w">thing</span> <span class="ns-w">that</span> <span class="ns-w">ends</span> <span class="ns-w">it.</span></span>
-        </h1>
-        <p style="font-size: 18.5px; line-height: 1.62; max-width: 58ch; margin: 0; color: color-mix(in srgb, var(--color-text) 82%, transparent); animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .5s both">A CRM your team will actually open. The manual process that eats four hours a week, gone. The operations nobody can see into, on one screen. {{ brand }} designs and builds the custom software companies run on — AI-accelerated delivery, senior judgement, timelines an agency can't quote against.</p>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 36px; animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .58s both">
-          <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary">Start a project</a>
-          <a href="#/work" onClick="{{ goWork }}" class="btn btn-ghost">See the work</a>
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px; margin-top: 40px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 60%, transparent); animation: ns-rise .8s ease .68s both">
-          <span aria-hidden="true" style="flex: none; align-self: flex-start; margin-top: 6.5px; width: 7px; height: 7px; border-radius: 50%; background: var(--color-accent); animation: ns-pulse 2.6s ease-in-out infinite"></span>
-          <span>{{ builderName }} · Singapore · <span style="white-space: nowrap">{{ availability }}</span></span>
-        </div>
-        <div style="margin-top: 40px; max-width: 560px; animation: ns-rise .8s ease .78s both">
-          <p style="font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 58%, transparent); margin: 0 0 10px">Heard on the first call</p>
-          <div aria-hidden="true" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--color-neutral-700); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-bg) 55%, transparent); backdrop-filter: blur(6px)">
-            <span style="color: var(--color-accent); font-size: 15px">&#8250;</span>
-            <span ref="{{ typedRef }}" class="ns-typed" style="font-size: 15px; line-height: 1.4; color: color-mix(in srgb, var(--color-text) 86%, transparent)"></span>
-            <span style="width: 8px; height: 17px; background: var(--color-accent); flex: none; animation: ns-caret 1.1s steps(1) infinite"></span>
+    <section class="ns-film" data-film="{{ filmAttr }}" ref="{{ filmRef }}">
+      <div class="ns-film-pin" data-film-pin>
+        <div class="ns-film-canvas" data-film-stage aria-hidden="true"></div>
+        <div class="ns-film-sweep" aria-hidden="true" style="position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, color-mix(in srgb, var(--color-accent) 12%, transparent) 50%, transparent 65%); animation: ns-sweep 9s ease-in-out 1.2s infinite"></div>
+        <div class="ns-hero">
+          <div class="ns-hero-rules" data-film-rest>
+            <div style="display: flex; flex-direction: column; gap: 7px; width: min(360px, 60%); margin-bottom: 44px">
+            <span style="height: 1px; background: var(--color-accent); transform-origin: left; animation: ns-rule .9s cubic-bezier(.2,.7,.2,1) both"></span>
+            <span style="height: 1px; background: color-mix(in srgb, var(--color-accent) 55%, transparent); transform-origin: left; width: 72%; animation: ns-rule .9s cubic-bezier(.2,.7,.2,1) .12s both"></span>
+            <span style="height: 1px; background: color-mix(in srgb, var(--color-accent) 30%, transparent); transform-origin: left; width: 44%; animation: ns-rule .9s cubic-bezier(.2,.7,.2,1) .24s both"></span>
+            </div>
           </div>
-          <p class="ns-vh">{{ typedAll }}</p>
+          <h1 aria-label="Every company runs on a problem it works around. I build the thing that ends it." class="ns-hero-h1" data-film-h1 style="--ns-gap: 42ms">
+            <span aria-hidden="true" data-film-problem style="display: block; --ns-at: .1s"><span class="ns-w">Every</span> <span class="ns-w">company</span> <span class="ns-w">runs</span> <span class="ns-w">on</span></span>
+            <span aria-hidden="true" data-film-problem style="display: block; --ns-at: .27s"><span class="ns-w">a</span> <span class="ns-w">problem</span> <span class="ns-w">it</span> <span class="ns-w">works</span> <span class="ns-w">around.</span></span>
+            <span aria-hidden="true" class="ns-hero-answer" data-film-answer style="--ns-at: .48s"><span class="ns-w">I</span> <span class="ns-w">build</span> <span class="ns-w">the</span> <span class="ns-w">thing</span> <span class="ns-w">that</span> <span class="ns-w">ends</span> <span class="ns-w">it.</span></span>
+          </h1>
+          <div class="ns-hero-rest" data-film-rest>
+            <p style="font-size: 18.5px; line-height: 1.62; max-width: 58ch; margin: 0; color: color-mix(in srgb, var(--color-text) 82%, transparent); animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .5s both">A CRM your team will actually open. The manual process that eats four hours a week, gone. The operations nobody can see into, on one screen. {{ brand }} designs and builds the custom software companies run on — AI-accelerated delivery, senior judgement, timelines an agency can't quote against.</p>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 36px; animation: ns-rise .8s cubic-bezier(.2,.7,.2,1) .58s both">
+              <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary">Start a project</a>
+              <a href="#/work" onClick="{{ goWork }}" class="btn btn-ghost">See the work</a>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 40px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 60%, transparent); animation: ns-rise .8s ease .68s both">
+              <span aria-hidden="true" style="flex: none; align-self: flex-start; margin-top: 6.5px; width: 7px; height: 7px; border-radius: 50%; background: var(--color-accent); animation: ns-pulse 2.6s ease-in-out infinite"></span>
+              <span>{{ builderName }} · Singapore · <span style="white-space: nowrap">{{ availability }}</span></span>
+            </div>
+          </div>
+          <sc-if value="{{ filmOff }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top: 40px; max-width: 560px; animation: ns-rise .8s ease .78s both">
+              <p style="font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 58%, transparent); margin: 0 0 10px">Heard on the first call</p>
+              <div aria-hidden="true" style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--color-neutral-700); border-radius: var(--radius-md); background: color-mix(in srgb, var(--color-bg) 55%, transparent); backdrop-filter: blur(6px)">
+                <span style="color: var(--color-accent); font-size: 15px">&#8250;</span>
+                <span ref="{{ typedRef }}" class="ns-typed" style="font-size: 15px; line-height: 1.4; color: color-mix(in srgb, var(--color-text) 86%, transparent)"></span>
+                <span style="width: 8px; height: 17px; background: var(--color-accent); flex: none; animation: ns-caret 1.1s steps(1) infinite"></span>
+              </div>
+              <p class="ns-vh">{{ typedAll }}</p>
+            </div>
+          </sc-if>
         </div>
+        <sc-if value="{{ filmOn }}" hint-placeholder-val="{{ true }}">
+          <ul class="ns-film-notes" aria-label="Heard on the first call">
+            <sc-for list="{{ filmNotes }}" as="n" hint-placeholder-count="5">
+              <li data-film-note>{{ n.text }}</li>
+            </sc-for>
+          </ul>
+        </sc-if>
+        <div class="ns-film-more">
+          <div class="ns-film-caps">
+            <div class="ns-film-cap" data-film-cap>
+              <p class="ns-film-line">The spreadsheet, the inbox and the group chat, replaced by one system your staff can use.</p>
+            </div>
+            <div class="ns-film-cap" data-film-cap>
+              <p class="ns-film-line">The software a company organises itself around.</p>
+              <div class="ns-film-ctas" data-film-cta>
+                <a href="#/start" onClick="{{ goStart }}" class="btn btn-primary">Start a project</a>
+                <a href="#/work" onClick="{{ goWork }}" class="btn btn-ghost">See the work</a>
+              </div>
+            </div>
+          </div>
+          <img class="ns-film-still" src="motion/film-still.webp" alt="" width="1200" height="750" loading="lazy" decoding="async" />
+        </div>
+        <div class="ns-film-rail" aria-hidden="true"><span data-film-tick></span><span data-film-tick></span><span data-film-tick></span><span data-film-tick></span></div>
+        <span class="ns-film-cue" data-film-cue aria-hidden="true"></span>
+        <sc-if value="{{ filmOn }}" hint-placeholder-val="{{ true }}">
+          <button type="button" class="ns-film-sound" data-film-sound aria-pressed="false"><span data-s="off">Sound off</span><span data-s="on">Sound on</span></button>
+        </sc-if>
       </div>
     </section>
 
@@ -285,7 +399,8 @@
   </sc-if>
 
   <sc-if value="{{ isSolutions }}" hint-placeholder-val="{{ false }}">
-  <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+  <div class="ns-page" style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+    <div class="ns-view" data-view="solutions" data-view-on="{{ filmAttr }}" ref="{{ viewRef }}" aria-hidden="true"></div>
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">Solutions</span>
     <h1 aria-label="Whatever the problem is, the answer is a system." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 5vw, 64px); line-height: 1.06; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.055em; max-width: 20ch"><span aria-hidden="true"><span class="ns-w">Whatever</span> <span class="ns-w">the</span> <span class="ns-w">problem</span> <span class="ns-w">is,</span> <span class="ns-w">the</span> <span class="ns-w">answer</span> <span class="ns-w">is</span> <span class="ns-w">a</span> <span class="ns-w">system.</span></span></h1>
     <p style="animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both; font-size: 18px; line-height: 1.62; max-width: 58ch; margin: 0 0 64px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">Most engagements start as a sentence: sales lives in three spreadsheets, onboarding takes a week of email, nobody can find the file. The shape of the build follows from the problem, not from a service menu.</p>
@@ -342,7 +457,8 @@
   </sc-if>
 
   <sc-if value="{{ isWork }}" hint-placeholder-val="{{ false }}">
-  <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+  <div class="ns-page" style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+    <div class="ns-view" data-view="work" data-view-on="{{ filmAttr }}" ref="{{ viewRef }}" aria-hidden="true"></div>
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">Work</span>
     <h1 aria-label="Things I've built, and what they changed." style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 5vw, 64px); line-height: 1.06; letter-spacing: -.018em; margin: 0 0 24px; margin-left: -.055em; max-width: 18ch"><span aria-hidden="true"><span class="ns-w">Things</span> <span class="ns-w">I've</span> <span class="ns-w">built,</span> <span class="ns-w">and</span> <span class="ns-w">what</span> <span class="ns-w">they</span> <span class="ns-w">changed.</span></span></h1>
     <p style="animation: ns-rise .75s cubic-bezier(.2,.7,.2,1) .14s both; font-size: 18px; line-height: 1.62; max-width: 56ch; margin: 0 0 56px; color: color-mix(in srgb, var(--color-text) 80%, transparent)">A young studio with a short list on purpose. Everything here I build end to end.</p>
@@ -373,7 +489,8 @@
   </sc-if>
 
   <sc-if value="{{ isAbout }}" hint-placeholder-val="{{ false }}">
-  <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+  <div class="ns-page" style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+    <div class="ns-view" data-view="about" data-view-on="{{ filmAttr }}" ref="{{ viewRef }}" aria-hidden="true"></div>
     <span style="display: block; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 28px; animation: ns-rise .7s cubic-bezier(.2,.7,.2,1) .05s both">About</span>
     <div class="ns-split-about">
       <div>
@@ -403,7 +520,8 @@
   </sc-if>
 
   <sc-if value="{{ isStart }}" hint-placeholder-val="{{ false }}">
-  <div style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+  <div class="ns-page" style="max-width: 1160px; margin: 0 auto; padding: 80px 24px 96px">
+    <div class="ns-view" data-view="start" data-view-on="{{ filmAttr }}" data-view-go="{{ viewGo }}" ref="{{ viewRef }}" aria-hidden="true"></div>
     <sc-if value="{{ notSent }}" hint-placeholder-val="{{ true }}">
     <div class="ns-split-start">
       <div>
@@ -545,7 +663,7 @@ const TYPED_LINES = [
 ];
 
 class Component extends DCLogic {
-  state = { page: this.routeFromHash() || 'home', sent: '', sentName: '', sentText: '', sentMailto: '', mailCut: false, copied: '', sending: false, sendFailed: false, errors: {}, still: this.storedStill(), settled: false };
+  state = { page: this.routeFromHash() || 'home', sent: '', sentName: '', sentText: '', sentMailto: '', mailCut: false, copied: '', sending: false, sendFailed: false, errors: {}, still: this.storedStill(), settled: false, filmFit: this.filmFits() };
   mq = matchMedia('(prefers-reduced-motion: reduce)');
   fine = matchMedia('(hover: hover) and (pointer: fine)');
   draft = this.loadDraft();
@@ -567,6 +685,21 @@ class Component extends DCLogic {
     if (this.fieldOn) this.stopField();
     this.canvas = el;
     this.startField();
+  };
+  // The Home film (motion/film.js), which plays behind the hero. It is mounted only where
+  // filmWanted() says so; everywhere else the hero is the plain one with a still picture under it.
+  filmRef = (el) => {
+    if (el === this.filmEl) return;
+    this.stopFilm();
+    this.filmEl = el;
+    this.syncFilm();
+  };
+  // The smaller 3D views on the other four pages: the same system, seen from somewhere else.
+  viewRef = (el) => {
+    if (el === this.viewEl) return;
+    this.stopView();
+    this.viewEl = el;
+    this.syncView();
   };
   formRef = (el) => {
     if (this.formEl && this.formEl !== el) {
@@ -636,6 +769,8 @@ class Component extends DCLogic {
     window.addEventListener('hashchange', this.onHash);
     window.addEventListener('focusin', this.onFocusIn);
     if (this.mq.addEventListener) this.mq.addEventListener('change', this.onMotionPref);
+    this.onFilmFit = () => this.setState({ filmFit: this.filmFits() }, () => { this.syncFilm(); this.syncView(); });
+    if (this.filmMq && this.filmMq.addEventListener) this.filmMq.addEventListener('change', this.onFilmFit);
     // An anchor that is not one of the pages shows Home. Say so in the address, so Back from
     // another page has somewhere to return to.
     if (!this.routeFromHash()) { try { history.replaceState(history.state, '', '#/'); } catch (e) {} }
@@ -655,6 +790,9 @@ class Component extends DCLogic {
     window.removeEventListener('hashchange', this.onHash);
     window.removeEventListener('focusin', this.onFocusIn);
     if (this.mq.removeEventListener) this.mq.removeEventListener('change', this.onMotionPref);
+    if (this.filmMq && this.filmMq.removeEventListener) this.filmMq.removeEventListener('change', this.onFilmFit);
+    this.stopFilm();
+    this.stopView();
     this.formRef(null);
   }
 
@@ -746,6 +884,76 @@ class Component extends DCLogic {
 
   reduced() { return !!this.state.still || this.props.bgMode === 'still' || this.mq.matches; }
 
+  // A laptop-sized window that can draw 3D. Phones and small windows keep the still picture.
+  filmFits() {
+    if (!this.filmMq) this.filmMq = matchMedia('(min-width: 900px) and (min-height: 540px)');
+    if (!this.filmMq.matches) return false;
+    if (this.gl === undefined) {
+      try {
+        const c = document.createElement('canvas');
+        this.gl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
+      } catch (e) { this.gl = false; }
+    }
+    return this.gl;
+  }
+
+  filmWanted() { return !!this.state.filmFit && !this.reduced() && this.props.motion !== 'none'; }
+
+  syncFilm() {
+    if (!this.filmEl || !this.filmWanted()) { this.stopFilm(); return; }
+    if (this.film || this.filmWait) return;
+    const el = this.filmEl;
+    const at = (path) => new URL(path, document.baseURI).href;
+    this.filmWait = true;
+    // At the top of the page the film is the first thing seen, so the page background stands
+    // down at once instead of showing for a moment and fading.
+    if (window.scrollY < window.innerHeight) this.holdField(true, true);
+    import(at('motion/film.js')).then((m) => {
+      this.filmWait = false;
+      if (this.gone || el !== this.filmEl || !this.filmWanted()) return;
+      this.film = m.mount({ root: el, three: at('vendor/three.module.min.js'), onActive: (on) => this.holdField(on) });
+    }).catch(() => { this.filmWait = false; this.gl = false; this.holdField(false); this.setState({ filmFit: false }); });
+  }
+
+  stopFilm() {
+    if (this.film) this.film.destroy();
+    this.film = null;
+    this.holdField(false);
+  }
+
+  syncView() {
+    if (!this.viewEl || !this.filmWanted()) { this.stopView(); return; }
+    if (this.view || this.viewWait) return;
+    const at = (path) => new URL(path, document.baseURI).href;
+    this.viewWait = true;
+    import(at('motion/film.js')).then((m) => {
+      this.viewWait = false;
+      // The page may have changed while the file was on its way: start whichever view is there now.
+      const el = this.viewEl;
+      if (this.gone || this.view || !el || !this.filmWanted()) return;
+      this.view = m.mountView({ root: el, three: at('vendor/three.module.min.js'), name: el.getAttribute('data-view') });
+    }).catch(() => { this.viewWait = false; });
+  }
+
+  stopView() {
+    if (this.view) this.view.destroy();
+    this.view = null;
+  }
+
+  // The page background rests while the film is on screen, and picks up again after it.
+  holdField(on, instant) {
+    if (!!this.fieldHeld === on) return;
+    this.fieldHeld = on;
+    document.documentElement.toggleAttribute('data-film-hold', on);
+    if (this.canvas) {
+      this.canvas.style.transition = instant ? 'none' : 'opacity .7s ease';
+      this.canvas.style.opacity = on ? '0' : '';
+    }
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = null; this.lastTs = 0;
+    if (!on && this.fieldOn && !this.reduced()) this.runLoop();
+  }
+
   storedStill() {
     try { return localStorage.getItem('ns-still') === '1'; } catch (e) { return false; }
   }
@@ -757,6 +965,8 @@ class Component extends DCLogic {
   };
 
   applyMotion() {
+    this.syncFilm();
+    this.syncView();
     document.querySelectorAll('[data-anim]').forEach((el) => { el.removeAttribute('data-anim'); el.style.removeProperty('--ns-d'); });
     this.untilt();
     this.syncRing();
@@ -765,7 +975,7 @@ class Component extends DCLogic {
     this.raf = null; this.lastTs = 0; this.par = undefined;
     if (!this.fieldOn) return;
     if (this.reduced()) { this.pulses = []; this.rings = []; this.frame(0); }
-    else this.runLoop();
+    else if (!this.fieldHeld) this.runLoop();
   }
 
   syncRing() {
@@ -903,7 +1113,7 @@ class Component extends DCLogic {
     document.documentElement.addEventListener('pointerleave', this.onLeave);
     this.onResize();
 
-    if (!this.reduced()) this.runLoop();
+    if (!this.reduced() && !this.fieldHeld) this.runLoop();
   }
 
   runLoop() {
@@ -1373,7 +1583,7 @@ class Component extends DCLogic {
     return {
       mainRef: this.mainRef, progressRef: this.progressRef, scanRef: this.scanRef, starRef: this.starRef,
       cursorRef: this.cursorRef, typedRef: this.typedRef, bgRef: this.bgRef, formRef: this.formRef,
-      copyRef: this.copyRef,
+      copyRef: this.copyRef, filmRef: this.filmRef, viewRef: this.viewRef,
       brand,
       builderName: this.props.builderName ?? 'Jasper Bitoon',
       tagline: this.props.tagline ?? 'Custom software for the problems you work around',
@@ -1382,6 +1592,10 @@ class Component extends DCLogic {
       availability: this.props.availability ?? 'Taking on new projects',
       year: new Date().getFullYear(),
       typedAll: TYPED_LINES.join('. ') + '.',
+      filmAttr: this.filmWanted() ? 'on' : 'off',
+      filmOn: this.filmWanted(), filmOff: !this.filmWanted(),
+      filmNotes: TYPED_LINES.map((text) => ({ text })),
+      viewGo: sent ? '1' : '0',
       isHome: page === 'home', isSolutions: page === 'solutions', isWork: page === 'work',
       isAbout: page === 'about', isStart: page === 'start',
       curSolutions: cur('solutions'), curWork: cur('work'), curAbout: cur('about'), curStart: cur('start'),
